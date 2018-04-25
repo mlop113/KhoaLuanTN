@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/ic_like"
+        android:orderInCategory="100"
+        android:title="Hoạt động bình luận"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_clearfilter"
+        android:icon="@drawable/ic_like"
+        android:orderInCategory="100"
+        android:title="Tin đã lưu"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_account"
+        android:orderInCategory="100"
+        android:title="Chỉnh sửa tài khoản"
+        app:showAsAction="never"
+       />
+    <item
+        android:id="@+id/action_pass"
+        android:orderInCategory="100"
+        android:title="Đổi mật khẩu"
+        app:showAsAction="never"
+       />
+    <item
+        android:id="@+id/action_quit"
+        android:orderInCategory="100"
+        android:title="Thoát"
+        app:showAsAction="never"
+      />
+</menu>
