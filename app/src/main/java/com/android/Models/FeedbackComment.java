@@ -4,12 +4,9 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
 
-/**
- * Created by Ngoc Vu on 12/18/2017.
- */
-
-public class Comment implements Serializable
-{
+public class FeedbackComment implements Serializable{
+    @SerializedName("FeedbackCommentID")
+    private String feedbackCommentID;
     @SerializedName("CommentID")
     private String commentID;
     @SerializedName("Content")
@@ -18,15 +15,21 @@ public class Comment implements Serializable
     private String dateCreate;
     @SerializedName("UserID")
     private String userID;
-    @SerializedName("ArticleID")
-    private String articleID;
 
-    public Comment(String commentID, String content, String dateCreate, String userID, String articleID) {
+    public FeedbackComment(String feedbackCommentID, String commentID, String content, String dateCreate, String userID) {
+        this.feedbackCommentID = feedbackCommentID;
         this.commentID = commentID;
         this.content = content;
         this.dateCreate = dateCreate;
         this.userID = userID;
-        this.articleID = articleID;
+    }
+
+    public String getFeedbackCommentID() {
+        return feedbackCommentID;
+    }
+
+    public void setFeedbackCommentID(String feedbackCommentID) {
+        this.feedbackCommentID = feedbackCommentID;
     }
 
     public String getCommentID() {
@@ -59,13 +62,5 @@ public class Comment implements Serializable
 
     public void setUserID(String userID) {
         this.userID = userID;
-    }
-
-    public String getArticleID() {
-        return articleID;
-    }
-
-    public void setArticleID(String articleID) {
-        this.articleID = articleID;
     }
 }

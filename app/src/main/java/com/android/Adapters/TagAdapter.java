@@ -1,23 +1,14 @@
 package com.android.Adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.android.Activity_Fragment.PostsOnRequestActivity;
-import com.android.Global.AppConfig;
-import com.android.Global.GlobalStaticData;
-import com.android.Models.Post;
+import com.android.Models.Tag;
 import com.android.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +19,10 @@ import java.util.List;
 
 public class TagAdapter extends RecyclerView.Adapter<TagAdapter.Viewholder> {
     Context context;
-    List<String> listTag = new ArrayList<>();
-    DatabaseReference databaseReference;
-    public TagAdapter(Context context, List<String> listTag) {
+    List<Tag> listTag = new ArrayList<>();
+    public TagAdapter(Context context, List<Tag> listTag) {
         this.context = context;
         this.listTag = listTag;
-        databaseReference = FirebaseDatabase.getInstance().getReference();
     }
 
     @Override
@@ -49,7 +38,7 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.Viewholder> {
                 Toast.makeText(context, "clicked", Toast.LENGTH_SHORT).show();
             }
         });*/
-        final String tag = listTag.get(position);
+        final Tag tag = listTag.get(position);
         holder.textViewName.setText("Thoi su");
 
 //        holder.textViewName.setOnClickListener(new View.OnClickListener() {
@@ -90,7 +79,7 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.Viewholder> {
         return position;
     }
 
-    public void setData(List<String> listTag){
+    public void setData(List<Tag> listTag){
         this.listTag.clear();
         this.listTag.addAll(listTag);
         notifyDataSetChanged();

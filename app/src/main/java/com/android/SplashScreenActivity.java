@@ -11,6 +11,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
+import com.android.Effect.Typewriter;
+import com.android.Global.AppConfig;
+import com.android.Global.GlobalStaticData;
+import com.android.Models.Comment;
+import com.android.Models.Post;
 import com.android.Models.UserMember;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -18,17 +23,11 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
-import com.android.Effect.Typewriter;
-import com.android.Global.AppConfig;
-import com.android.Global.GlobalStaticData;
-import com.android.Models.Comment;
-import com.android.Models.Post;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public class SplashScreenActivity extends AppCompatActivity {
@@ -109,10 +108,10 @@ public class SplashScreenActivity extends AppCompatActivity {
                     GlobalStaticData.listPostHome.add(dataPost.getValue(Post.class));
                 }*/
 
-                GenericTypeIndicator<HashMap<String, Post>> objectsGTypeInd = new GenericTypeIndicator<HashMap<String, Post>>() {
+               /* GenericTypeIndicator<HashMap<String, Post>> objectsGTypeInd = new GenericTypeIndicator<HashMap<String, Post>>() {
                 };
                 Map<String, Post> objectHashMap = dataSnapshot.getValue(objectsGTypeInd);
-                GlobalStaticData.listPostHome = new ArrayList<Post>(objectHashMap.values());
+                GlobalStaticData.listPostHome = new ArrayList<Post>(objectHashMap.values());*/
 
             }
 
@@ -132,11 +131,11 @@ public class SplashScreenActivity extends AppCompatActivity {
                     databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
-                            GenericTypeIndicator<HashMap<String, Post>> objectsGTypeInd = new GenericTypeIndicator<HashMap<String, Post>>() {
+                            /*GenericTypeIndicator<HashMap<String, Post>> objectsGTypeInd = new GenericTypeIndicator<HashMap<String, Post>>() {
                             };
                             Map<String, Post> objectHashMap = dataSnapshot.getValue(objectsGTypeInd);
                             List<Post> listPost = new ArrayList<Post>(objectHashMap.values());
-                            GlobalStaticData.listPostOfCategory.put(category, listPost);
+                            GlobalStaticData.listPostOfCategory.put(category, listPost);*/
                         }
 
                         @Override

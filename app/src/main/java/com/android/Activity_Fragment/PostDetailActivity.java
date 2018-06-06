@@ -2,11 +2,11 @@ package com.android.Activity_Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -16,29 +16,24 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.android.API.APIFunction;
+import com.android.API.ResponseModel;
 import com.android.Adapters.PostDetailAdapter;
-import com.android.CustomView.CustomSnackbar;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
-import com.android.Global.GlobalFunction;
-import com.android.Login;
+import com.android.Global.GlobalStaticData;
+import com.android.Models.Article;
 import com.android.Models.Comment;
-import com.android.Models.Post;
-import com.android.Models.ReplyComment;
 import com.android.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.github.nkzawa.emitter.Emitter;
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 
@@ -46,7 +41,8 @@ import dmax.dialog.SpotsDialog;
  * Created by Ngoc Vu on 12/18/2017.
  */
 
-public class PostDetailActivity extends AppCompatActivity implements View.OnClickListener{
+public class PostDetailActivity extends AppCompatActivity implements View.OnClickListener {
+    private String TAG = this.getClass().getName();
     AppPreferences appPreferences;
     InputMethodManager inputMethodManager;
     //animation
@@ -60,7 +56,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     RecyclerView recyclerViewPostDetail;
     PostDetailAdapter postDetailAdapter;
     Intent intent;
-    Post post;
+    Article article;
 
     //bottom
     LinearLayout linearLayoutLike;
@@ -73,6 +69,30 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
 
     //dialog wait
     SpotsDialog progressDialog;
+
+    //socket
+    private final String CLIENT_SEND_GETPOST = "CLIENT_SEND_GETPOST";
+    private final String SERVER_SEND_GETPOST = "SERVER_SEND_GETPOST";
+    private Socket mSocket;
+    Emitter.Listener onGetPost;
+
+    {
+        try {
+            mSocket = IO.socket(GlobalStaticData.URL_HOST);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        onGetPost = new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                handleGetPost(args);
+            }
+        };
+    }
+
+    APIFunction apiFunction;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,23 +109,27 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         animshake = AnimationUtils.loadAnimation(this, R.anim.animshake);
 
         intent = getIntent();
-        if(intent!=null)
-        {
-            post = (Post) intent.getSerializableExtra(AppConfig.POST);
-            if(post==null)
-            {
+        if (intent != null) {
+            article = (Article) intent.getSerializableExtra(AppConfig.POST);
+            if (article == null) {
                 Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
                 finish();
             }
-        }
-        else
-        {
+        } else {
             Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
             finish();
         }
+
+        apiFunction = APIFunction.getInstance();
+
+
         mapping();
         initView();
         event();
+
+        //SOCKET
+        initSocket();
+        addEvent();
 
 
     }
@@ -127,10 +151,10 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void initView() {
-        postDetailAdapter = new PostDetailAdapter(this,post);
+        postDetailAdapter = new PostDetailAdapter(this, article);
         recyclerViewPostDetail.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewPostDetail.setAdapter(postDetailAdapter);
-        progressDialog = new SpotsDialog(this,R.style.CustomAlertDialog);
+        progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
         checkLiked(imageViewLike);
     }
 
@@ -144,9 +168,9 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         linearLayoutSend.setOnClickListener(this);
     }
 
-    private void checkAction(){
-        if(intent!=null){
-            if(intent.getStringExtra(AppConfig.ACTION)!=null) {
+    private void checkAction() {
+        if (intent != null) {
+            if (intent.getStringExtra(AppConfig.ACTION) != null) {
                 String action = intent.getStringExtra(AppConfig.ACTION);
                 if (action.equals(AppConfig.COMMENT)) {
                     editTextComment.requestFocus();
@@ -159,7 +183,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.linearLayoutBack:
                 finish();
                 break;
@@ -171,39 +195,27 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 onClickLikePost(imageViewLike);
                 break;
             case R.id.linearLayoutSend:
-                if(appPreferences.isLogin()) {
-                    Date myDate = new Date();
-                    if (!TextUtils.isEmpty(editTextComment.getText().toString().trim())) {
-                        Comment comment = new Comment("312321", new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                editTextComment.getText().toString(), new HashMap<String, ReplyComment>(),
-                                new ArrayList<String>(), appPreferences.getUserId());
-                        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS)
-                                .push().setValue(comment, new DatabaseReference.CompletionListener() {
-                            @Override
-                            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-                                databaseReference.child("commentId").setValue(databaseReference.getKey());
-                                Toast.makeText(PostDetailActivity.this, "sent", Toast.LENGTH_SHORT).show();
-                                editTextComment.clearFocus();
-                                editTextComment.setText("");
-                                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                                imageViewSend.startAnimation(animshake);
-                                recyclerViewPostDetail.smoothScrollToPosition(View.FOCUS_DOWN);
-                            }
-                        });
 
-                    }
+                long time = new java.util.Date().getTime();
+                String commentID = Long.toString(time);
+                Date myDate = new Date();
+                String content = editTextComment.getText().toString();
+                if (!TextUtils.isEmpty(content)) {
+                    Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
+                            new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                            "1", article.getArticleID());
+                    ResponseModel response = apiFunction.insertComment(comment);
+                    if (response != null)
+                        Log.d(TAG, "onClick: response: " + response.getMessage());
                 }
-                else{
-                    Intent intentLogin = new Intent(this,Login.class);
-                    startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-                }
+
                 break;
         }
     }
 
     private void checkLiked(final ImageView imageViewLike) {
 
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).addValueEventListener(new ValueEventListener() {
+        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String userId = appPreferences.getUserId();
@@ -223,12 +235,12 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
 
     }
 
-    private void onClickLikePost( final ImageView imageViewLike) {
-        if(appPreferences.isLogin()) {
+    private void onClickLikePost(final ImageView imageViewLike) {
+        /*if(appPreferences.isLogin()) {
             //get from user_post
             if (post.getUserLikeIds() != null && post.getUserLikeIds().size() > 0) {
                 String userId = appPreferences.getUserId();
@@ -252,11 +264,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         else {
             Intent intentLogin = new Intent(this,Login.class);
             startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }
+        }*/
     }
 
-    private void onClickBookMark(){
-        if(appPreferences.isLogin()) {
+    private void onClickBookMark() {
+        /*if(appPreferences.isLogin()) {
             progressDialog.show();
             databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(appPreferences.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -341,14 +353,14 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         else{
             Intent intentLogin = new Intent(this,Login.class);
             startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }
+        }*/
     }
 
 
     @Override
     public void finish() {
         super.finish();
-        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(),0);
+        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
         overridePendingTransitionExit();
     }
 
@@ -357,6 +369,12 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         super.onStart();
         checkAction();
         postDetailAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mSocket.disconnect();
     }
 
     /**
@@ -376,15 +394,28 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(data==null) {
+        if (data == null) {
             return;
         }
 
-        if(requestCode==AppConfig.REQUEST_CODE_LOGIN && resultCode==AppConfig.RESULT_CODE_LOGIN)
-        {
+        if (requestCode == AppConfig.REQUEST_CODE_LOGIN && resultCode == AppConfig.RESULT_CODE_LOGIN) {
             postDetailAdapter.notifyDataSetChanged();
         }
     }
 
+
+    //socket
+    private void handleGetPost(Object[] args) {
+        Log.d("PostDetailActivity", "handleGetPost: " + String.valueOf(args));
+    }
+
+    private void initSocket() {
+        mSocket.connect();
+        mSocket.on(SERVER_SEND_GETPOST, onGetPost);
+    }
+
+    private void addEvent() {
+        mSocket.emit(CLIENT_SEND_GETPOST, 1);
+    }
 
 }

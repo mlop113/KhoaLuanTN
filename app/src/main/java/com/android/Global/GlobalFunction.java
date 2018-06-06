@@ -7,6 +7,7 @@ import android.util.Log;
 import com.android.Activity_Fragment.BookMarkActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Models.Post;
+import com.android.Models.User;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -291,4 +292,9 @@ public class GlobalFunction {
 
     }
 
+
+    public static User getCurrentUser(){
+        User currentUser = null;
+        return currentUser;
+    }
 }

@@ -1,5 +1,7 @@
 package com.android.Models;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 
 /**
@@ -8,15 +10,22 @@ import java.io.Serializable;
 
 public class Tag implements Serializable
 {
-
+    @SerializedName("TagID")
+    private String tagID;
+    @SerializedName("Name")
     private String name;
 
-    public Tag(String name) {
-        super();
+    public Tag(String tagID, String name) {
+        this.tagID = tagID;
         this.name = name;
     }
 
-    public Tag() {
+    public String getTagID() {
+        return tagID;
+    }
+
+    public void setTagID(String tagID) {
+        this.tagID = tagID;
     }
 
     public String getName() {
@@ -26,5 +35,4 @@ public class Tag implements Serializable
     public void setName(String name) {
         this.name = name;
     }
-
 }

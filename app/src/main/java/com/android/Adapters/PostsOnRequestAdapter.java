@@ -2,7 +2,6 @@ package com.android.Adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,25 +9,17 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.android.API.APIFunction;
 import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
-import com.android.Global.GlobalFunction;
-import com.android.Login;
+import com.android.Models.Article;
 import com.android.Models.Post;
 import com.android.R;
 import com.bumptech.glide.Glide;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,18 +31,18 @@ import java.util.List;
 public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     Context context;
     Animation animation0to180,animation180to0;
-    List<Post> listPost = new ArrayList<>();
+    List<Article> listArticle = new ArrayList<>();
     Animation hyperspaceJumpAnimation;
-    DatabaseReference databaseReference;
     AppPreferences appPreferences;
-    public PostsOnRequestAdapter(Context context, List<Post> listPost) {
+    APIFunction apiFunction;
+    public PostsOnRequestAdapter(Context context, List<Article> listArticle) {
         this.context = context;
-        this.listPost = listPost;
+        this.listArticle = listArticle;
         animation0to180 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_0to180);
         animation180to0 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_180to0);
         hyperspaceJumpAnimation = AnimationUtils.loadAnimation(context, R.anim.animlike);
-        databaseReference = FirebaseDatabase.getInstance().getReference();
         appPreferences = AppPreferences.getInstance(context);
+        apiFunction = new APIFunction();
     }
 
     @Override
@@ -64,15 +55,15 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     @Override
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
 
-        final Post post = listPost.get(position);
+        final Article article = listArticle.get(position);
         final ItemViewHolder itemViewHolder = (ItemViewHolder) holder;
         //imageCover
         try{
-            Glide.with(context).load(post.getImg()).into(itemViewHolder.imageViewCover);
+            Glide.with(context).load(apiFunction.getUrlImage(article.getCoverImage())).into(itemViewHolder.imageViewCover);
         }catch (IllegalArgumentException e){
             e.printStackTrace();
         }
-        itemViewHolder.textViewTitile.setText(post.getTitle());
+        itemViewHolder.textViewTitile.setText(article.getTitle());
 
       //  checkLiked(post);
 
@@ -82,7 +73,7 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(context, PostDetailActivity.class);
-                intent.putExtra(AppConfig.POST, post);
+                intent.putExtra(AppConfig.POST, article);
                 context.startActivity(intent);
             }
         });
@@ -91,7 +82,7 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     }
 
     private void checkLiked(final Post post, final ImageView imageViewLike, final TextView textViewLike){
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
+        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String userId = appPreferences.getUserId();
@@ -114,11 +105,11 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
     }
 
     private void onClickLikePost(final Post post, final ImageView imageViewLike){
-        if(appPreferences.isLogin()) {
+        /*if(appPreferences.isLogin()) {
             //get from user_post
             String userId = appPreferences.getUserId();
             if (post.getUserLikeIds() != null && post.getUserLikeIds().size() > 0) {
@@ -147,13 +138,13 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         else{
             Intent intentLogin = new Intent(context,Login.class);
             context.startActivity(intentLogin);
-        }
+        }*/
 
     }
 
     @Override
     public int getItemCount() {
-        return listPost ==null ? 0: listPost.size();
+        return listArticle ==null ? 0: listArticle.size();
     }
 
     @Override
@@ -163,9 +154,9 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 
 
-    public void setData(List<Post> listPost) {
-        this.listPost.clear();
-        this.listPost.addAll(listPost);
+    public void setData(List<Article> list) {
+        this.listArticle.clear();
+        this.listArticle.addAll(list);
         notifyDataSetChanged();
     }
 

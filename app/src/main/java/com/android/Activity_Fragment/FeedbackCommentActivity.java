@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -20,20 +19,13 @@ import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Interface.IOnClickFeedback;
 import com.android.Login;
+import com.android.Models.Article;
 import com.android.Models.Comment;
-import com.android.Models.Post;
-import com.android.Models.ReplyComment;
 import com.android.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by Ngoc Vu on 12/18/2017.
@@ -49,7 +41,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     LinearLayout linearLayoutback;
 
     //post
-    Post post;
+    Article article;
 
     //comm
     Comment comment;
@@ -86,7 +78,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         if(intent!=null)
         {
             comment = (Comment) intent.getSerializableExtra(AppConfig.COMMENT);
-            post = (Post) intent.getSerializableExtra(AppConfig.POST);
+            article = (Article) intent.getSerializableExtra(AppConfig.POST);
         }
         else {
             finish();
@@ -112,24 +104,11 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     private void initView() {
-        feedbackCommentAdapter = new FeedbackCommentAdapter(this,post,comment);
+        feedbackCommentAdapter = new FeedbackCommentAdapter(this,article,comment);
         feedbackCommentAdapter.setiOnClickFeedback(this);
         recyclerViewFeedbackComment.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewFeedbackComment.setAdapter(feedbackCommentAdapter);
         checkLiked();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                .child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Comment comment = dataSnapshot.getValue(Comment.class);
-                feedbackCommentAdapter.setData(comment);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private void event() {
@@ -154,7 +133,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
             case R.id.linearLayoutSend:
                 if(appPreferences.isLogin()) {
                     Date myDate = new Date();
-                    if (!TextUtils.isEmpty(editTextComment.getText().toString().trim())) {
+                    /*if (!TextUtils.isEmpty(editTextComment.getText().toString().trim())) {
                         final ReplyComment replyComment = new ReplyComment(editTextComment.getText().toString().trim()
                                 , new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate), appPreferences.getUserId());
                         databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS)
@@ -171,7 +150,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                         });
 
 
-                    }
+                    }*/
                 }
                 else{
                     Intent intentLogin = new Intent(this,Login.class);
@@ -215,7 +194,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
 
 
     private void checkLiked() {
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
+        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.hasChild(AppConfig.FIREBASE_FIELD_USERLIKEIDS)) {
@@ -243,12 +222,12 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
 
     }
 
     private void onClickLikeComment() {
-        if(appPreferences.isLogin()) {
+        /*if(appPreferences.isLogin()) {
             String userId = appPreferences.getUserId();
             //get from user_post
             if (comment.getUserLikeIds() != null && comment.getUserLikeIds().size() > 0) {
@@ -274,7 +253,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         else{
             Intent intentLogin = new Intent(this,Login.class);
             startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }
+        }*/
     }
 
     @Override

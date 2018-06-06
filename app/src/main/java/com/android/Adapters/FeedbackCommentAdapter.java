@@ -1,7 +1,6 @@
 package com.android.Adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,22 +8,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.Global.AppConfig;
+import com.android.API.APIFunction;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
 import com.android.Interface.IOnClickFeedback;
-import com.android.Login;
+import com.android.Models.Article;
 import com.android.Models.Comment;
-import com.android.Models.Post;
-import com.android.Models.ReplyComment;
-import com.android.Models.UserMember;
+import com.android.Models.FeedbackComment;
+import com.android.Models.User;
 import com.android.R;
 import com.bumptech.glide.Glide;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,20 +30,19 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private final int ITEMVIEWTYPE_COMMENT=0;
     private final int ITEMVIEWTYPE_FEEDBACK=1;
     Context context;
-    Post post;
+    Article article;
     Comment comment;
-    List<ReplyComment> listFeedback = new ArrayList<>();
-    DatabaseReference databaseReference;
+    List<FeedbackComment> listFeedback = new ArrayList<>();
     IOnClickFeedback iOnClickFeedback;
     AppPreferences appPreferences;
-    public FeedbackCommentAdapter(Context context,Post post, Comment comment) {
+    APIFunction apiFunction;
+    public FeedbackCommentAdapter(Context context, Article article, Comment comment) {
         this.context = context;
-        this.post = post;
+        this.article = article;
         this.comment = comment;
+        apiFunction = new APIFunction();
         this.listFeedback = new ArrayList<>();
-        if(comment.getReplyComments()!=null)
-            this.listFeedback = new ArrayList<>(comment.getReplyComments().values());
-        databaseReference = FirebaseDatabase.getInstance().getReference();
+        this.listFeedback = apiFunction.getListFeedback_byCommentID(comment.getCommentID());
         appPreferences = AppPreferences.getInstance(context);
 
     }
@@ -79,44 +71,24 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         switch (holder.getItemViewType()){
             case ITEMVIEWTYPE_COMMENT:
                 final CommentViewholder commentViewholder = (CommentViewholder) holder;
-                databaseReference.child(AppConfig.FIREBASE_FIELD_USERMEMBERS).child(comment.getUserOfCommentId()).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        UserMember userMember = dataSnapshot.getValue(UserMember.class);
-                        commentViewholder.textViewUsername.setText(userMember.getName());
-                        try{
-                            Glide.with(context).load(userMember.getImg()).into(commentViewholder.imageViewUserComment);
-                        }catch (IllegalArgumentException e){
-                            e.printStackTrace();
-                        }
-                    }
+                User user = apiFunction.getUser_byID(comment.getUserID());
+                commentViewholder.textViewUsername.setText(user.getFullName());
+                try{
+                    Glide.with(context).load(apiFunction.getUrlImage(user.getImage())).into(commentViewholder.imageViewUserComment);
+                }catch (IllegalArgumentException e){
+                    e.printStackTrace();
+                }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
-                commentViewholder.textViewContent.setText(comment.getMessage());
+                commentViewholder.textViewContent.setText(comment.getContent());
                 commentViewholder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(comment.getDateCreate()));
                 checkLiked(comment,commentViewholder.textViewLike);
                 commentViewholder.textViewLike.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        onClickLikeComment(post,comment,commentViewholder.textViewLike);
+                        onClickLikeComment(article,comment,commentViewholder.textViewLike);
                     }
                 });
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        commentViewholder.textViewLikeNumber.setText(String.valueOf(dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount()));
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+                //commentViewholder.textViewLikeNumber.setText(String.valueOf());
 
                 commentViewholder.textViewReplyComment.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -126,32 +98,22 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 });
                 break;
             case ITEMVIEWTYPE_FEEDBACK:
-                final ReplyComment feedbackComment = listFeedback.get(position-1);
+                final FeedbackComment feedbackComment = listFeedback.get(position-1);
                 final FeedbackViewholer feedbackViewholer = (FeedbackViewholer) holder;
-                databaseReference.child(AppConfig.FIREBASE_FIELD_USERMEMBERS).child(feedbackComment.getUserReplyId()).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        UserMember userMember = dataSnapshot.getValue(UserMember.class);
-                        feedbackViewholer.textViewFeedbackUsername.setText(userMember.getName());
-                        try{
-                            Glide.with(context).load(userMember.getImg()).into(feedbackViewholer.imageViewUserReply);
-                        }catch (IllegalArgumentException e){
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+                User userfeedback = apiFunction.getUser_byID(feedbackComment.getUserID());
+                feedbackViewholer.textViewFeedbackUsername.setText(userfeedback.getFullName());
+                try{
+                    Glide.with(context).load(apiFunction.getUrlImage(userfeedback.getImage())).into(feedbackViewholer.imageViewUserReply);
+                }catch (IllegalArgumentException e){
+                    e.printStackTrace();
+                }
                 feedbackViewholer.textViewFeedbackContent.setText(feedbackComment.getContent());
                 feedbackViewholer.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(feedbackComment.getDateCreate()));
                 break;
         }
     }
 
-    public void addFeebackComment(ReplyComment feedbackComment){
+    public void addFeebackComment(FeedbackComment feedbackComment){
         listFeedback.add(feedbackComment);
         notifyDataSetChanged();
     }
@@ -174,40 +136,23 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void checkLiked(final Comment comment, final TextView textViewLike) {
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.hasChild(AppConfig.FIREBASE_FIELD_USERLIKEIDS)) {
-                    String userId =appPreferences.getUserId();
-                    Comment comment1 = dataSnapshot.getValue(Comment.class);
-                    List<String> userLikeId = comment1.getUserLikeIds();
-                    long count = dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount();
-                    if (userLikeId != null && count > 0) {
-                        if (userLikeId.contains(userId)) {
-                            textViewLike.setTextColor(context.getResources().getColor(R.color.likedcomment));
-                        } else {
-                            textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                        }
-                    } else {
-                        textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                    }
-                }
-                else {
-                    textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                }
-
+        /*String userId =appPreferences.getUserId();
+        Comment comment1 = dataSnapshot.getValue(Comment.class);
+        List<String> userLikeId = comment1.getUserLikeIds();
+        long count = dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount();
+        if (userLikeId != null && count > 0) {
+            if (userLikeId.contains(userId)) {
+                textViewLike.setTextColor(context.getResources().getColor(R.color.likedcomment));
+            } else {
+                textViewLike.setTextColor(context.getResources().getColor(R.color.black));
             }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
+        } else {
+            textViewLike.setTextColor(context.getResources().getColor(R.color.black));
+        }*/
     }
 
-    private void onClickLikeComment(final Post post, Comment comment, final TextView textViewLike) {
-        if(appPreferences.isLogin()) {
+    private void onClickLikeComment(final Article article, Comment comment, final TextView textViewLike) {
+        /*if(appPreferences.isLogin()) {
             String userId = appPreferences.getUserId();
             //get from user_post
             if (comment.getUserLikeIds() != null && comment.getUserLikeIds().size() > 0) {
@@ -232,14 +177,13 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         {
             Intent intentLogin = new Intent(context,Login.class);
             context.startActivity(intentLogin);
-        }
+        }*/
     }
 
     public void setData(Comment comment){
         this.comment = comment;
         this.listFeedback = new ArrayList<>();
-        if(comment.getReplyComments()!=null)
-            this.listFeedback = new ArrayList<>(comment.getReplyComments().values());
+        this.listFeedback = apiFunction.getListFeedback_byCommentID(comment.getCommentID());
         notifyDataSetChanged();
     }
 

@@ -10,22 +10,18 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.android.API.APIFunction;
 import com.android.Activity_Fragment.FeedbackCommentActivity;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
-import com.android.Login;
+import com.android.Models.Article;
 import com.android.Models.Comment;
+import com.android.Models.FeedbackComment;
 import com.android.Models.Post;
-import com.android.Models.ReplyComment;
-import com.android.Models.UserMember;
+import com.android.Models.User;
 import com.android.R;
 import com.bumptech.glide.Glide;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,17 +32,16 @@ import java.util.List;
 
 public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHolder>{
     Context context;
-    Post post;
+    Article article;
     List<Comment> listComment = new ArrayList<>();
-    DatabaseReference databaseReference;
     AppPreferences appPreferences;
-
-    public CommentAdapter(Context context,Post post, List<Comment> listComment) {
+    APIFunction apiFunction;
+    public CommentAdapter(Context context, Article article, List<Comment> listComment) {
         this.context = context;
-        this.post = post;
+        this.article = article;
         this.listComment = listComment;
-        databaseReference = FirebaseDatabase.getInstance().getReference();
         appPreferences = AppPreferences.getInstance(context);
+        apiFunction = new APIFunction();
     }
 
     @Override
@@ -57,40 +52,29 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         final Comment comm = listComment.get(position);
-        databaseReference.child(AppConfig.FIREBASE_FIELD_USERMEMBERS).child(comm.getUserOfCommentId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                UserMember userMember = dataSnapshot.getValue(UserMember.class);
-                holder.textViewUsername.setText(userMember.getName());
-                try{
-                    Glide.with(context).load(userMember.getImg()).into(holder.imageViewUserComment);
-                }catch (IllegalArgumentException e){
-                    e.printStackTrace();
-                }
-            }
+        User user = apiFunction.getUser_byID(comm.getUserID());
+        holder.textViewUsername.setText(user.getFullName());
+        try{
+            Glide.with(context).load(apiFunction.getUrlImage(user.getImage())).into(holder.imageViewUserComment);
+        }catch (IllegalArgumentException e){
+            e.printStackTrace();
+        }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-        holder.textViewContent.setText(comm.getMessage());
+        holder.textViewContent.setText(comm.getContent());
         holder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(comm.getDateCreate()));
         holder.textViewReplyComment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent =new Intent(context,FeedbackCommentActivity.class);
                 intent.putExtra(AppConfig.COMMENT,comm);
-                intent.putExtra(AppConfig.POST,post);
+                intent.putExtra(AppConfig.POST,article);
                 intent.putExtra(AppConfig.ACTION,AppConfig.COMMENT);
                 context.startActivity(intent);
             }
         });
 
-        List<ReplyComment> listFeedback = new ArrayList<>();
-        if((comm.getReplyComments()!=null)) {
-            listFeedback = new ArrayList<>(comm.getReplyComments().values());
+        List<FeedbackComment> listFeedback = apiFunction.getListFeedback_byCommentID(comm.getCommentID());
+        if(listFeedback!=null) {
             if ( listFeedback.size() > 0) {
                 holder.linearLayoutViewFeedback.setVisibility(View.VISIBLE);
                 holder.linearLayoutViewFeedback.setOnClickListener(new View.OnClickListener() {
@@ -98,7 +82,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
                     public void onClick(View v) {
                         Intent intent = new Intent(context, FeedbackCommentActivity.class);
                         intent.putExtra(AppConfig.COMMENT, comm);
-                        intent.putExtra(AppConfig.POST,post);
+                        intent.putExtra(AppConfig.POST,article);
                         context.startActivity(intent);
                     }
                 });
@@ -106,29 +90,18 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
                     holder.textViewViewFeedback.setVisibility(View.VISIBLE);
                     holder.textViewViewFeedback.setText("Xem " + String.valueOf(listFeedback.size()) + " câu trả lời trước");
                 }
-                ReplyComment feedbackComment = listFeedback.get(0);
-                databaseReference.child(AppConfig.FIREBASE_FIELD_USERMEMBERS).child(feedbackComment.getUserReplyId()).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        UserMember userMember = dataSnapshot.getValue(UserMember.class);
-                        holder.textViewFeedbackUsername.setText(userMember.getName());
-                        try{
-                            Glide.with(context).load(userMember.getImg()).into(holder.imageViewUserReply);
-                        }catch (IllegalArgumentException e){
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+                FeedbackComment feedbackComment = listFeedback.get(0);
+                User userFeedback = apiFunction.getUser_byID(feedbackComment.getUserID());
+                holder.textViewFeedbackUsername.setText(userFeedback.getFullName());
+                try{
+                    Glide.with(context).load(apiFunction.getUrlImage(userFeedback.getImage())).into(holder.imageViewUserReply);
+                }catch (IllegalArgumentException e){
+                    e.printStackTrace();
+                }
                 holder.textViewFeedbackContent.setText(feedbackComment.getContent());
             }
         }
-        //holder.textViewLikeNumber.setText(comm.getUserLikeIds().size());
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comm.getCommentId()).addValueEventListener(new ValueEventListener() {
+        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comm.getCommentId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 holder.textViewLikeNumber.setText(String.valueOf(dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount()));
@@ -138,18 +111,19 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
 
         checkLiked(comm,holder.textViewLike);
 
-        holder.textViewLike.setOnClickListener(new View.OnClickListener() {
+        /*holder.textViewLike.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onClickLikeComment(post,comm,holder.textViewLike);
             }
-        });
+        });*/
 
     }
+
 
     public void addComment(Comment comment) {
         this.listComment.add(comment);
@@ -163,7 +137,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
 
     @Override
     public long getItemId(int position) {
-        return Long.parseLong(listComment.get(position).getCommentId());
+        return Long.parseLong(listComment.get(position).getCommentID());
     }
 
     @Override
@@ -179,7 +153,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
     }
 
     private void checkLiked(final Comment comment, final TextView textViewLike) {
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
+        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.hasChild(AppConfig.FIREBASE_FIELD_USERLIKEIDS)) {
@@ -207,12 +181,12 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
 
     }
 
     private void onClickLikeComment(final Post post,Comment comment, final TextView textViewLike) {
-        if(appPreferences.isLogin()) {
+        /*if(appPreferences.isLogin()) {
             String userId = appPreferences.getUserId();
             //get from user_post
             if (comment.getUserLikeIds() != null && comment.getUserLikeIds().size() > 0) {
@@ -236,7 +210,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         else{
             Intent intentLogin = new Intent(context,Login.class);
             context.startActivity(intentLogin);
-        }
+        }*/
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder{

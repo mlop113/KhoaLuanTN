@@ -10,9 +10,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.android.API.APIFunction;
 import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Global.AppConfig;
-import com.android.Models.Post;
+import com.android.Models.Article;
 import com.android.R;
 import com.bumptech.glide.Glide;
 
@@ -25,11 +26,12 @@ import java.util.List;
 
 public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHolder>{
     Context context;
-    List<Post> listPost = new ArrayList<>();
-
-    public RelatedAdapter(Context context, List<Post> listPost) {
+    List<Article> listArticle = new ArrayList<>();
+    APIFunction apiFunction;
+    public RelatedAdapter(Context context, List<Article> listArticle) {
         this.context = context;
-        this.listPost = listPost;
+        this.listArticle = listArticle;
+        apiFunction = new APIFunction();
     }
 
     @Override
@@ -40,18 +42,18 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, final int position){
-        final Post postModel = listPost.get(position);
-        holder.textViewTitile.setText(postModel.getTitle());
+        final Article article = listArticle.get(position);
+        holder.textViewTitile.setText(article.getTitle());
         holder.linearLayoutItem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(context, PostDetailActivity.class);
-                intent.putExtra(AppConfig.POST,postModel);
+                intent.putExtra(AppConfig.POST,article);
                 context.startActivity(intent);
             }
         });
         try{
-            Glide.with(context).load(postModel.getImg()).into(holder.imageViewCover);
+            Glide.with(context).load(apiFunction.getUrlImage(article.getCoverImage())).into(holder.imageViewCover);
         }catch (IllegalArgumentException e){
             e.printStackTrace();
         }
@@ -65,19 +67,19 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
 
     @Override
     public long getItemId(int position) {
-        return Long.parseLong(listPost.get(position).getPostId());
+        return Long.parseLong(listArticle.get(position).getArticleID());
     }
 
 
     @Override
     public int getItemCount() {
-        return listPost ==null ? 0: listPost.size();
+        return listArticle ==null ? 0: listArticle.size();
     }
 
 
-    public void setData(List<Post> listPost){
-        this.listPost.clear();
-        this.listPost.addAll(listPost);
+    public void setData(List<Article> list){
+        this.listArticle.clear();
+        this.listArticle.addAll(list);
         notifyDataSetChanged();
     }
 

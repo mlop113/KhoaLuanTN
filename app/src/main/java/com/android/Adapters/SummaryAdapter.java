@@ -3,7 +3,6 @@ package com.android.Adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,27 +13,18 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.android.API.APIFunction;
 import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
-import com.android.Effect.Blur;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
-import com.android.Global.GlobalFunction;
-import com.android.Login;
-import com.android.Models.Post;
+import com.android.Models.Article;
+import com.android.Models.Category;
 import com.android.R;
 import com.bumptech.glide.Glide;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Ngoc Vu on 12/18/2017.
@@ -46,19 +36,19 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final int ITEMVIEWTYPE_CATEGORY = 2;
     Context context;
     Animation animation0to180, animation180to0;
-    List<Post> listPost = new ArrayList<>();
-    List<String> listCategory = new ArrayList<>();
+    List<Article> listArticle = new ArrayList<>();
+    List<Category> listCategory = new ArrayList<>();
     Animation hyperspaceJumpAnimation;
-    DatabaseReference databaseReference;
     AppPreferences appPreferences;
-    public SummaryAdapter(Context context, List<Post> listPost, List<String> listCategory) {
+    APIFunction apiFunction;
+    public SummaryAdapter(Context context, List<Article> listArticle, List<Category> listCategory) {
         this.context = context;
-        this.listPost = listPost;
+        this.listArticle = listArticle;
         this.listCategory = listCategory;
         animation0to180 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_0to180);
         animation180to0 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_180to0);
         hyperspaceJumpAnimation = AnimationUtils.loadAnimation(context, R.anim.animlike);
-        databaseReference = FirebaseDatabase.getInstance().getReference();
+        apiFunction = new APIFunction();
         appPreferences = AppPreferences.getInstance(context);
     }
 
@@ -84,76 +74,54 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         switch (holder.getItemViewType()) {
             case ITEMVIEWTYPE_HEADER:
 
-                final Post postHeader = listPost.get(position);
+                final Article articleHeader = listArticle.get(position);
                 final HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
                 try{
-                    Glide.with(context).load(postHeader.getImg()).into(headerViewHolder.imageViewCover);
+
+                    Glide.with(context).load(apiFunction.getUrlImage(articleHeader.getCoverImage())).into(headerViewHolder.imageViewCover);
                 }catch (IllegalArgumentException e){
                     e.printStackTrace();
                 }
-                headerViewHolder.textViewTitile.setText(postHeader.getTitle());
+                headerViewHolder.textViewTitile.setText(articleHeader.getTitle());
                // Blur blur = new Blur(context);
                // blur.applyBlur(headerViewHolder.imageViewCover, headerViewHolder.textViewDescription);
-                headerViewHolder.textViewDescription.setText(postHeader.getDescription());
+                headerViewHolder.textViewDescription.setText(articleHeader.getDescription());
               //  checkLiked(postHeader, headerViewHolder.imageViewLike, headerViewHolder.textViewLike);
 
 
-//                if(postHeader.getUserShareIds()!=null && postHeader.getUserShareIds().size()>0)
-//                    headerViewHolder.textViewShare.setText(String.valueOf(postHeader.getUserShareIds().size()));
-//                else
-//                    headerViewHolder.textViewShare.setText("0");
-//                headerViewHolder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(postHeader.getDateCreate()));
 
                 headerViewHolder.linearLayoutSummary.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(context, PostDetailActivity.class);
-                        intent.putExtra(AppConfig.POST, postHeader);
+                        intent.putExtra(AppConfig.POST, articleHeader);
                         context.startActivity(intent);
                     }
                 });
 
-//                headerViewHolder.linearLayoutLike.setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View v) {
-//                        onClickLikePost(postHeader, headerViewHolder.imageViewLike);
-//                    }
-//                });
-
-
-
-//                headerViewHolder.linearLayoutShare.setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View v) {
-//
-//                    }
-//                });
                 break;
             case ITEMVIEWTYPE_ITEM:
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(listPost.get(position).getPostId()).addValueEventListener(new ValueEventListener() {
+                final Article article = listArticle.get(position);
+                final ItemViewHolder itemViewHolder = (ItemViewHolder) holder;
+                //imageCover
+                try{
+                    Glide.with(context).load(article.getCoverImage()).into(itemViewHolder.imageViewCover);
+                }catch (IllegalArgumentException e){
+                    e.printStackTrace();
+                }
+                itemViewHolder.textViewTitile.setText(article.getTitle());
+                //    checkLiked(post, itemViewHolder.imageViewLike, itemViewHolder.textViewLike);
+
+
+
+                itemViewHolder.relativeLayoutSummary.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        final Post post = dataSnapshot.getValue(Post.class);
-                        final ItemViewHolder itemViewHolder = (ItemViewHolder) holder;
-                        //imageCover
-                        try{
-                            Glide.with(context).load(post.getImg()).into(itemViewHolder.imageViewCover);
-                        }catch (IllegalArgumentException e){
-                            e.printStackTrace();
-                        }
-                        itemViewHolder.textViewTitile.setText(post.getTitle());
-                    //    checkLiked(post, itemViewHolder.imageViewLike, itemViewHolder.textViewLike);
-
-
-
-                        itemViewHolder.relativeLayoutSummary.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                Intent intent = new Intent(context, PostDetailActivity.class);
-                                intent.putExtra(AppConfig.POST, post);
-                                context.startActivity(intent);
-                            }
-                        });
+                    public void onClick(View v) {
+                        Intent intent = new Intent(context, PostDetailActivity.class);
+                        intent.putExtra(AppConfig.POST, article);
+                        context.startActivity(intent);
+                    }
+                });
 
 
 //                        itemViewHolder.linearLayoutLike.setOnClickListener(new View.OnClickListener() {
@@ -163,159 +131,81 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 //                            }
 //                        });
 
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
 
                 break;
             case ITEMVIEWTYPE_CATEGORY:
 
-                final String category = listCategory.get(position - listPost.size());
+                final Category category = listCategory.get(position - listArticle.size());
                 final CategoryViewHolder categoryViewHolder = (CategoryViewHolder) holder;
 
                 //listCategory home
+                final List<Article> listArticleByCategory = apiFunction.getListArticle_byCategoryID(category.getCategoryID());
 
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        final List<Post> listPostOfCategory = new ArrayList<Post>();
-                        GenericTypeIndicator<HashMap<String, Post>> objectsGTypeInd = new GenericTypeIndicator<HashMap<String, Post>>() {
-                        };
-                        Map<String, Post> objectHashMap = dataSnapshot.getValue(objectsGTypeInd);
-                        List<Post> listPost = new ArrayList<Post>(objectHashMap.values());
-                        for (Post p : listPost) {
-                            if (p.getcategory().equals(category)) {
-                                listPostOfCategory.add(p);
-                            }
-                        }
-                        Log.d("listPostOfCategory", String.valueOf(listPostOfCategory.size()));
-                        categoryViewHolder.relativeLayoutCategoryName.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                Intent intent = new Intent(context, PostsOnRequestActivity.class);
-                                intent.putExtra(AppConfig.LISTPOST, (ArrayList) listPostOfCategory);
-                                intent.putExtra(AppConfig.BARNAME, category);
-                                context.startActivity(intent);
-                            }
-                        });
-
-                        categoryViewHolder.textViewCateGoryName.setText(category);
-
-                        if (listPostOfCategory != null && listPostOfCategory.size() > 0) {
-                            final Post post1 = listPostOfCategory.get(0);
-                            categoryViewHolder.linearLayoutPost1.setVisibility(View.VISIBLE);
-                            try{
-                                Glide.with(context).load(post1.getImg()).into(categoryViewHolder.imageViewPost1);
-                            }catch (IllegalArgumentException e){
-                                e.printStackTrace();
-                            }
-                            categoryViewHolder.textViewTitlePost1.setText(post1.getTitle());
-                            categoryViewHolder.linearLayoutPost1.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    openPostDetail(post1);
-                                }
-                            });
-                            if (listPostOfCategory.size() > 1) {
-                                final Post post2 = listPostOfCategory.get(1);
-                                categoryViewHolder.linearLayoutPost2.setVisibility(View.VISIBLE);
-                                try{
-                                    Glide.with(context).load(post2.getImg()).into(categoryViewHolder.imageViewPost2);
-                                }catch (IllegalArgumentException e){
-                                    e.printStackTrace();
-                                }
-                                categoryViewHolder.textViewDescriptionPost2.setText(post2.getDescription());
-                                categoryViewHolder.linearLayoutPost2.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        openPostDetail(post2);
-                                    }
-                                });
-                            }
-                            if (listPostOfCategory.size() > 2) {
-                                final Post post3 = listPostOfCategory.get(2);
-                                categoryViewHolder.linearLayoutPost3.setVisibility(View.VISIBLE);
-                                try{
-                                    Glide.with(context).load(post3.getImg()).into(categoryViewHolder.imageViewPost3);
-                                }catch (IllegalArgumentException e){
-                                    e.printStackTrace();
-                                }
-                                categoryViewHolder.textViewDescriptionPost3.setText(post3.getDescription());
-                                categoryViewHolder.linearLayoutPost3.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        openPostDetail(post3);
-                                    }
-                                });
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
-                /*final List<Post> listPostOfCategory = GlobalStaticData.listPostOfCategory.get(category.getCategoryId());
-                Log.d("listPostOfCategory",String.valueOf(listPostOfCategory.size()));
-                //Log.d("listPostOfCategory",String.valueOf(listPostOfCategory.size()));
                 categoryViewHolder.relativeLayoutCategoryName.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(context, PostsOnRequestActivity.class);
-                        intent.putExtra(AppConfig.LISTPOST, (ArrayList) listPostOfCategory);
-                        intent.putExtra(AppConfig.BARNAME, category.getName());
+                        intent.putExtra(AppConfig.LISTPOST, (ArrayList) listArticleByCategory);
+                        intent.putExtra(AppConfig.BARNAME, category);
                         context.startActivity(intent);
                     }
                 });
 
                 categoryViewHolder.textViewCateGoryName.setText(category.getName());
 
-                if (listPostOfCategory != null && listPostOfCategory.size() > 0) {
-                    final Post post1 = listPostOfCategory.get(0);
+                if (listArticleByCategory != null && listArticleByCategory.size() > 0) {
+                    final Article article1 = listArticleByCategory.get(0);
                     categoryViewHolder.linearLayoutPost1.setVisibility(View.VISIBLE);
-                    categoryViewHolder.imageViewPost1.setImageResource(R.drawable.bogiaothong);
-                    categoryViewHolder.textViewTitlePost1.setText(post1.getTitle());
+                    try{
+                        Glide.with(context).load(article1.getCoverImage()).into(categoryViewHolder.imageViewPost1);
+                    }catch (IllegalArgumentException e){
+                        e.printStackTrace();
+                    }
+                    categoryViewHolder.textViewTitlePost1.setText(article1.getTitle());
                     categoryViewHolder.linearLayoutPost1.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            openPostDetail(post1);
+                            openPostDetail(article1);
                         }
                     });
-                    if (listPostOfCategory.size() > 1) {
-                        final Post post2 = listPostOfCategory.get(1);
+                    if (listArticleByCategory.size() > 1) {
+                        final Article article2 = listArticleByCategory.get(1);
                         categoryViewHolder.linearLayoutPost2.setVisibility(View.VISIBLE);
-                        categoryViewHolder.imageViewPost2.setImageResource(R.drawable.bogiaothong);
-                        categoryViewHolder.textViewDescriptionPost2.setText(post2.getDescription());
+                        try{
+                            Glide.with(context).load(article2.getCoverImage()).into(categoryViewHolder.imageViewPost2);
+                        }catch (IllegalArgumentException e){
+                            e.printStackTrace();
+                        }
+                        categoryViewHolder.textViewDescriptionPost2.setText(article2.getDescription());
                         categoryViewHolder.linearLayoutPost2.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                openPostDetail(post2);
+                                openPostDetail(article2);
                             }
                         });
                     }
-                    if (listPostOfCategory.size() > 2) {
-                        final Post post3 = listPostOfCategory.get(2);
+                    if (listArticleByCategory.size() > 2) {
+                        final Article article3 = listArticleByCategory.get(2);
                         categoryViewHolder.linearLayoutPost3.setVisibility(View.VISIBLE);
-                        categoryViewHolder.imageViewPost3.setImageResource(R.drawable.bogiaothong);
-                        categoryViewHolder.textViewDescriptionPost3.setText(post3.getDescription());
+                        try{
+                            Glide.with(context).load(article3.getCoverImage()).into(categoryViewHolder.imageViewPost3);
+                        }catch (IllegalArgumentException e){
+                            e.printStackTrace();
+                        }
+                        categoryViewHolder.textViewDescriptionPost3.setText(article3.getDescription());
                         categoryViewHolder.linearLayoutPost3.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                openPostDetail(post3);
+                                openPostDetail(article3);
                             }
                         });
                     }
-                }*/
+                }
                 break;
         }
     }
+
+
 
     private static int LIKE_TIME_OUT = 1500;
 
@@ -383,49 +273,49 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public int getItemViewType(int position) {
-        if (position >= 0 && position < listPost.size()) {
+        if (position >= 0 && position < listArticle.size()) {
             if (position == 0)
                 return ITEMVIEWTYPE_HEADER;
             return ITEMVIEWTYPE_ITEM;
         }
-        if (position >= listPost.size())
+        if (position >= listArticle.size())
             return ITEMVIEWTYPE_CATEGORY;
         return position;
     }
 
     @Override
     public long getItemId(int position) {
-        return Long.parseLong(listPost.get(position).getPostId());
+        return Long.parseLong(listArticle.get(position).getArticleID());
     }
 
 
     @Override
     public int getItemCount() {
-        return listPost == null && listCategory == null ? 0 : listPost.size() + listCategory.size();
+        return listArticle == null && listCategory == null ? 0 : listArticle.size() + listCategory.size();
     }
 
 
-    public void setListPost(List<Post> listPost) {
-        this.listPost.clear();
-        this.listPost.addAll(listPost);
+    public void setListArticle(List<Article> list) {
+        this.listArticle.clear();
+        this.listArticle.addAll(list);
         notifyDataSetChanged();
     }
 
-    public void setListCategory(List<String> listCategory) {
+    public void setListCategory(List<Category> listCategory) {
         this.listCategory.clear();
         this.listCategory.addAll(listCategory);
         notifyDataSetChanged();
     }
 
-    public void addAll(ArrayList<Post> listPost) {
-        int startIndex = this.listPost.size();
-        this.listPost.addAll(startIndex, listPost);
-        notifyItemRangeInserted(startIndex, listPost.size());
+    public void addAll(ArrayList<Article> list) {
+        int startIndex = this.listArticle.size();
+        this.listArticle.addAll(startIndex, list);
+        notifyItemRangeInserted(startIndex, list.size());
     }
 
-    private void openPostDetail(Post post) {
+    private void openPostDetail(Article article) {
         Intent intent = new Intent(context, PostDetailActivity.class);
-        intent.putExtra(AppConfig.POST, post);
+        intent.putExtra(AppConfig.POST, article);
         context.startActivity(intent);
     }
 

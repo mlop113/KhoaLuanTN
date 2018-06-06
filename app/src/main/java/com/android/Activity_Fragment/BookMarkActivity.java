@@ -13,12 +13,8 @@ import android.widget.Toast;
 
 import com.android.Adapters.PostsOnRequestAdapter;
 import com.android.Global.AppConfig;
-import com.android.Models.Post;
+import com.android.Models.Article;
 import com.android.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -31,7 +27,7 @@ import dmax.dialog.SpotsDialog;
  */
 
 public class BookMarkActivity extends AppCompatActivity implements View.OnClickListener {
-    public static List<Post> listPost = new ArrayList<>();
+    public static List<Article> listArticle = new ArrayList<>();
     String barname="";
     //back
     LinearLayout linearLayoutBack;
@@ -44,7 +40,7 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
     RecyclerView recyclerViewPostOnReQuest;
     public static PostsOnRequestAdapter postsOnRequestAdapter;
 
-    DatabaseReference databaseReference;
+
     ValueEventListener valueEventListener;
 
     //dialog wait
@@ -54,16 +50,13 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book_mark);
-        //connect firebase
-        //fireBase();
-        databaseReference = FirebaseDatabase.getInstance().getReference();
         overridePendingTransitionEnter();
 
         intent = getIntent();
         if(intent!=null)
         {
-            listPost=new ArrayList<Post>();
-            listPost =  (List<Post>) intent.getSerializableExtra(AppConfig.LISTPOST);
+            listArticle=new ArrayList<Article>();
+            listArticle =  (List<Article>) intent.getSerializableExtra(AppConfig.LISTPOST);
             barname = intent.getStringExtra(AppConfig.BARNAME);
         }
         else
@@ -92,7 +85,7 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
         textViewBarName.setText(barname);
         //recyclerview listpost
         recyclerViewPostOnReQuest.setLayoutManager(new LinearLayoutManager(this));
-        postsOnRequestAdapter = new PostsOnRequestAdapter(BookMarkActivity.this,listPost);
+        postsOnRequestAdapter = new PostsOnRequestAdapter(BookMarkActivity.this,listArticle);
         recyclerViewPostOnReQuest.setAdapter(postsOnRequestAdapter);
         progressDialog = new SpotsDialog(this,R.style.CustomAlertDialog);
 
@@ -120,33 +113,6 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
     @Override
     protected void onStart() {
         super.onStart();
-        valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                final List<Post> newList = new ArrayList<Post>();
-                for(Post post:listPost){
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            newList.add(dataSnapshot.getValue(Post.class));
-                            postsOnRequestAdapter.setData(newList);
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(valueEventListener);
-
     }
 
     @Override
@@ -157,17 +123,11 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     protected void onPause() {
-        if (valueEventListener != null && databaseReference!=null) {
-            databaseReference.removeEventListener(valueEventListener);
-        }
         super.onPause();
     }
 
     @Override
     protected void onStop() {
-        if (valueEventListener != null && databaseReference!=null) {
-            databaseReference.removeEventListener(valueEventListener);
-        }
         super.onStop();
     }
 

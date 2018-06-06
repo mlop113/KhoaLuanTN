@@ -13,13 +13,10 @@ import android.widget.Toast;
 
 import com.android.Adapters.PostsOnRequestAdapter;
 import com.android.Global.AppConfig;
-import com.android.Models.Post;
+import com.android.Models.Article;
 import com.android.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +28,7 @@ import dmax.dialog.SpotsDialog;
  */
 
 public class PostsOnRequestActivity extends AppCompatActivity implements View.OnClickListener {
-    List<Post> listPost = new ArrayList<>();
-    List<String> listPostTemp = new ArrayList<>();
+    List<Article> listArticle = new ArrayList<>();
     String barname="";
 
     //back
@@ -63,8 +59,8 @@ public class PostsOnRequestActivity extends AppCompatActivity implements View.On
         intent = getIntent();
         if(intent!=null)
         {
-            listPost=new ArrayList<Post>();
-            listPost =  (List<Post>) intent.getSerializableExtra(AppConfig.LISTPOST);
+            listArticle=new ArrayList<Article>();
+            listArticle =  (List<Article>) intent.getSerializableExtra(AppConfig.LISTPOST);
             barname = intent.getStringExtra(AppConfig.BARNAME);
         }
         else
@@ -76,33 +72,6 @@ public class PostsOnRequestActivity extends AppCompatActivity implements View.On
         mappings();
         initViews();
         events();
-
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                final List<Post> newList = new ArrayList<Post>();
-                for(Post post:listPost){
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            newList.add(dataSnapshot.getValue(Post.class));
-                            postsOnRequestAdapter.setData(newList);
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private void mappings() {
@@ -121,7 +90,7 @@ public class PostsOnRequestActivity extends AppCompatActivity implements View.On
         textViewBarName.setText(barname);
         //recyclerview listpost
         recyclerViewPostOnReQuest.setLayoutManager(new LinearLayoutManager(this));
-        postsOnRequestAdapter = new PostsOnRequestAdapter(PostsOnRequestActivity.this,listPost);
+        postsOnRequestAdapter = new PostsOnRequestAdapter(PostsOnRequestActivity.this,listArticle);
         recyclerViewPostOnReQuest.setAdapter(postsOnRequestAdapter);
         progressDialog = new SpotsDialog(this,R.style.CustomAlertDialog);
     }
