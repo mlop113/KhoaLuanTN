@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class GlobalStaticData {
     static int currentPage=0;
-    public static String URL_HOST = "http://192.168.1.112:3000/";
+    public static String URL_HOST = "http://192.168.56.1:3000/";
     public static UserMember currentUser  = new UserMember("asdasd", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "-KyUeplvVdI5vI4ghU01");;
     public static List<Post> listPostOnReQuest = new ArrayList<>();
     public static List<Post> listPostOnReQuest_Tag = new ArrayList<>();
