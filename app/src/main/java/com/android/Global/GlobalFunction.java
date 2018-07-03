@@ -1,7 +1,12 @@
 package com.android.Global;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.android.Activity_Fragment.BookMarkActivity;
@@ -14,6 +19,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -297,4 +306,45 @@ public class GlobalFunction {
         User currentUser = null;
         return currentUser;
     }
+
+    public static boolean isNetworkAvailable2(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService( context.CONNECTIVITY_SERVICE );
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public static boolean isNetworkAvailable(Context context) {
+        if (isNetworkAvailable2(context)) {
+            try {
+                HttpURLConnection urlc = (HttpURLConnection) (new URL(GlobalStaticData.URL_HOST).openConnection());
+                urlc.setRequestProperty("User-Agent", "Test");
+                urlc.setRequestProperty("Connection", "close");
+                urlc.setConnectTimeout(1500);
+                urlc.connect();
+                return (urlc.getResponseCode() == 200);
+            } catch (IOException e) {
+                Log.e("isNetworkAvailable", "Error checking internet connection", e);
+            }
+        } else {
+            Log.d("isNetworkAvailable", "No network available!");
+        }
+        return false;
+    }
+
+
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            // Log exception
+            return null;
+        }
+    }
+
 }

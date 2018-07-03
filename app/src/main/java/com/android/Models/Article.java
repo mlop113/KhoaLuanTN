@@ -21,8 +21,12 @@ public class Article implements Serializable{
     private String coverImage;
     @SerializedName("UserID")
     private String userID;
+    @SerializedName("ContentOffLine")
+    private String contentOffLine;
+    @SerializedName("CoverImageOffLine")
+    private byte[]  coverImageOffLine;
 
-    public Article(String articleID, String title, String description, String content, String categoryID, String dateCreate, String coverImage, String userID) {
+    public Article(String articleID, String title, String description, String content, String categoryID, String dateCreate, String coverImage, String userID, String contentOffLine, byte[] coverImageOffLine) {
         this.articleID = articleID;
         this.title = title;
         this.description = description;
@@ -31,6 +35,8 @@ public class Article implements Serializable{
         this.dateCreate = dateCreate;
         this.coverImage = coverImage;
         this.userID = userID;
+        this.contentOffLine = contentOffLine;
+        this.coverImageOffLine = coverImageOffLine;
     }
 
     public String getArticleID() {
@@ -95,5 +101,21 @@ public class Article implements Serializable{
 
     public void setUserID(String userID) {
         this.userID = userID;
+    }
+
+    public String getContentOffLine() {
+        return contentOffLine;
+    }
+
+    public void setContentOffLine(String contentOffLine) {
+        this.contentOffLine = contentOffLine;
+    }
+
+    public byte[] getCoverImageOffLine() {
+        return coverImageOffLine;
+    }
+
+    public void setCoverImageOffLine(byte[] coverImageOffLine) {
+        this.coverImageOffLine = coverImageOffLine;
     }
 }

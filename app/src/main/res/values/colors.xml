@@ -27,4 +27,8 @@
     <color name="whellpicker_IndicatorColor">#5488b0fa</color>
     <color name="likedcomment">@android:color/holo_blue_dark</color>
     <color name="notlikedcomment">@android:color/black</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="error_background_press">#a96d6e</color>
+    <color name="error_background">#80393b</color>
 </resources>

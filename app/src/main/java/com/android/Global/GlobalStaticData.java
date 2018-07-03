@@ -1,5 +1,7 @@
 package com.android.Global;
 
+import android.webkit.WebSettings;
+
 import com.android.Models.Post;
 import com.android.Models.Tag;
 import com.android.Models.UserMember;
@@ -15,7 +17,7 @@ import java.util.Map;
 
 public class GlobalStaticData {
     static int currentPage=0;
-    public static String URL_HOST = "http://192.168.56.1:3000/";
+    public static String URL_HOST = "http://192.168.1.6:3000/";
     public static UserMember currentUser  = new UserMember("asdasd", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "-KyUeplvVdI5vI4ghU01");;
     public static List<Post> listPostOnReQuest = new ArrayList<>();
     public static List<Post> listPostOnReQuest_Tag = new ArrayList<>();
@@ -25,7 +27,8 @@ public class GlobalStaticData {
     public static List<String> listCategoryHome = new ArrayList<>();
     public static List<String> listBookmark = new ArrayList<>();
     public static List<String> listTag = new ArrayList<>();
-
+    public static String patchOffLine;
+    public static WebSettings webSettings;
 
 
 

@@ -1,7 +1,13 @@
 package com.android.Activity_Fragment;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,13 +20,16 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.API.APIFunction;
 import com.android.API.ResponseModel;
 import com.android.Adapters.PostDetailAdapter;
+import com.android.BroadcastReceiver.NetworkChangeReceiver;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Global.GlobalStaticData;
 import com.android.Models.Article;
 import com.android.Models.Comment;
@@ -28,12 +37,18 @@ import com.android.R;
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 
@@ -43,8 +58,11 @@ import dmax.dialog.SpotsDialog;
 
 public class PostDetailActivity extends AppCompatActivity implements View.OnClickListener {
     private String TAG = this.getClass().getName();
+    Handler handler;
     AppPreferences appPreferences;
     InputMethodManager inputMethodManager;
+    //
+    SwipeRefreshLayout swiperefresh;
     //animation
     Animation animlike;
     Animation animshake;
@@ -52,6 +70,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     LinearLayout linearLayoutBack;
     //bookmark
     LinearLayout linearLayoutBookmark;
+
     //data Post
     RecyclerView recyclerViewPostDetail;
     PostDetailAdapter postDetailAdapter;
@@ -69,7 +88,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
 
     //dialog wait
     SpotsDialog progressDialog;
-
+    //progressbass load more
+    private boolean isLoading;
+    private int visibleThreshold = 5;
+    private int lastVisibleItem, totalItemCount;
+    private LinearLayoutManager linearLayoutManager;
     //socket
     private final String CLIENT_SEND_GETPOST = "CLIENT_SEND_GETPOST";
     private final String SERVER_SEND_GETPOST = "SERVER_SEND_GETPOST";
@@ -92,11 +115,19 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     APIFunction apiFunction;
+    //
+    TextView tvPostDetailStatus;
+    BroadcastReceiver updateNetworkReciver;
+    private AdView mAdView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_detail);
+        progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
+
+        initAdmob();
+
         appPreferences = AppPreferences.getInstance(this);
         //connect firebase
         //fireBase();
@@ -121,7 +152,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         }
 
         apiFunction = APIFunction.getInstance();
-
+        handler = new Handler();
 
         mapping();
         initView();
@@ -130,15 +161,49 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         //SOCKET
         initSocket();
         addEvent();
+        updateNetWork(GlobalFunction.isNetworkAvailable(this));
+        NetworkChangeReceiver.register(this);
+        registerUpdateNetworkReciver();
+    }
 
+    private void initAdmob() {
+        // Sample AdMob app ID: ca-app-pub-3940256099942544~3347511713
+        MobileAds.initialize(this, getString(R.string.banner_ad_app_id));
+        mAdView = findViewById(R.id.adView);
+        mAdView.setAdListener(new AdListener() {
+            @Override
+            public void onAdFailedToLoad(int i) {
+                super.onAdFailedToLoad(i);
+                mAdView.setVisibility(View.GONE);
+            }
+        });
 
+        loadAdmob();
+    }
+
+    private void loadAdmob() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+    }
+
+    private void updateAdmobNetwork(boolean isAvailable) {
+        if (isAvailable) {
+            mAdView.setVisibility(View.VISIBLE);
+            loadAdmob();
+        } else {
+            mAdView.setVisibility(View.GONE);
+        }
     }
 
     private void mapping() {
+        swiperefresh = findViewById(R.id.swipp_refresh);
         //back
         linearLayoutBack = (LinearLayout) findViewById(R.id.linearLayoutBack);
         //bookmark
         linearLayoutBookmark = (LinearLayout) findViewById(R.id.linearLayoutBookmark);
+        //status
+        tvPostDetailStatus = findViewById(R.id.tv_post_detail_status);
+
         //recyclerView contant content,tag,related and comment
         recyclerViewPostDetail = (RecyclerView) findViewById(R.id.recyclerViewPostDetail);
 
@@ -151,11 +216,26 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void initView() {
-        postDetailAdapter = new PostDetailAdapter(this, article);
-        recyclerViewPostDetail.setLayoutManager(new LinearLayoutManager(this));
+
+        swiperefresh.setColorScheme(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+        swiperefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                postDetailAdapter.notifyDataSetChanged();
+                swiperefresh.setRefreshing(false);
+            }
+        });
+
+        postDetailAdapter = new PostDetailAdapter(PostDetailActivity.this, article);
+        recyclerViewPostDetail.setLayoutManager(new LinearLayoutManager(PostDetailActivity.this));
+        linearLayoutManager = (LinearLayoutManager) recyclerViewPostDetail.getLayoutManager();
         recyclerViewPostDetail.setAdapter(postDetailAdapter);
-        progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
+
         checkLiked(imageViewLike);
+
     }
 
     private void event() {
@@ -166,6 +246,34 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         //bottom
         linearLayoutLike.setOnClickListener(this);
         linearLayoutSend.setOnClickListener(this);
+        linearLayoutManager = (LinearLayoutManager) recyclerViewPostDetail.getLayoutManager();
+        recyclerViewPostDetail.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                totalItemCount = linearLayoutManager.getItemCount();
+                lastVisibleItem = linearLayoutManager
+                        .findLastVisibleItemPosition();
+                if (!isLoading && GlobalFunction.isNetworkAvailable(PostDetailActivity.this)
+                        && totalItemCount <= (lastVisibleItem + visibleThreshold)) {
+                    //postDetailAdapter.updateProgressBarLoadMore(true);
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "onScrolled: ");
+                            List<Comment> comments = new ArrayList<>();
+                            comments.add(new Comment("1", "1", "1", "1", "1"));
+                            comments.add(new Comment("1", "1", "1", "1", "1"));
+                            postDetailAdapter.loadMore(comments);
+                            //postDetailAdapter.updateProgressBarLoadMore(false);
+                            isLoading = false;
+                        }
+                    }, 2000);
+                    isLoading = true;
+                }
+            }
+        });
     }
 
     private void checkAction() {
@@ -177,6 +285,8 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                     inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
                 }
             }
+        } else {
+            inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
         }
     }
 
@@ -195,20 +305,30 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 onClickLikePost(imageViewLike);
                 break;
             case R.id.linearLayoutSend:
+                if (GlobalFunction.isNetworkAvailable(this)) {
+                    long time = new java.util.Date().getTime();
+                    String commentID = Long.toString(time);
+                    Date myDate = new Date();
+                    String content = editTextComment.getText().toString();
+                    if (!TextUtils.isEmpty(content)) {
+                        Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
+                                new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                "1", article.getArticleID());
+                        ResponseModel response = apiFunction.insertComment(comment);
+                        if (response != null && response.getMessage().contains("complete")) {
+                            Log.d(TAG, "onClick: response: " + response.getMessage());
+                            Toast.makeText(this, "Bình luận thành công!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d(TAG, "onClick: response: " + response.getMessage());
+                            Toast.makeText(this, "Bình luận không thành công!", Toast.LENGTH_SHORT).show();
+                        }
 
-                long time = new java.util.Date().getTime();
-                String commentID = Long.toString(time);
-                Date myDate = new Date();
-                String content = editTextComment.getText().toString();
-                if (!TextUtils.isEmpty(content)) {
-                    Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
-                            new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                            "1", article.getArticleID());
-                    ResponseModel response = apiFunction.insertComment(comment);
-                    if (response != null)
-                        Log.d(TAG, "onClick: response: " + response.getMessage());
+                    }
+                } else {
+                    Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
                 }
-
+                editTextComment.setText("");
+                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
                 break;
         }
     }
@@ -368,13 +488,22 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     protected void onStart() {
         super.onStart();
         checkAction();
-        postDetailAdapter.notifyDataSetChanged();
+        FloatingActionButton fab =  findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (GlobalStaticData.getCurrentPage() == 0)
+                    recyclerViewPostDetail.smoothScrollToPosition(0);
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mSocket.disconnect();
+        NetworkChangeReceiver.unregister(this);
+        unregisterUpdateNetworkReciver();
     }
 
     /**
@@ -394,13 +523,13 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (data == null) {
+        /*if (data == null) {
             return;
         }
 
         if (requestCode == AppConfig.REQUEST_CODE_LOGIN && resultCode == AppConfig.RESULT_CODE_LOGIN) {
             postDetailAdapter.notifyDataSetChanged();
-        }
+        }*/
     }
 
 
@@ -418,4 +547,41 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         mSocket.emit(CLIENT_SEND_GETPOST, 1);
     }
 
+    private void registerUpdateNetworkReciver() {
+        try {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(AppConfig.BROADCAST_UPDATE_UI);
+            updateNetworkReciver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent != null) {
+                        boolean isNetworkAvailable = intent.getBooleanExtra(AppConfig.BROADCAST_NETWORK_AVAILABLE, true);
+                        updateNetWork(isNetworkAvailable);
+                    }
+                }
+            };
+            registerReceiver(updateNetworkReciver, filter);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void unregisterUpdateNetworkReciver() {
+        try {
+            unregisterReceiver(updateNetworkReciver);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateStatus(boolean isAvailable) {
+        if (tvPostDetailStatus != null) {
+            tvPostDetailStatus.setVisibility(isAvailable ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void updateNetWork(boolean isAvailable) {
+        updateStatus(isAvailable);
+        updateAdmobNetwork(isAvailable);
+    }
 }

@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Football News</string>
+   <string name="banner_ad_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    <!--<string name="banner_ad_app_id">ca-app-pub-5917310053120916~1718287886</string>
+    <string name="banner_ad_unit_id">ca-app-pub-5917310053120916/9782688156</string>-->
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_bookmarks">Trang đánh dấu</string>

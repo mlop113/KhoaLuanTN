@@ -1,8 +1,10 @@
 package com.android;
 
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
@@ -22,6 +24,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.widgets.WheelDayPicker;
@@ -32,8 +35,10 @@ import com.android.Activity_Fragment.Hot_Fragment;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Adapters.CategoryAdapter;
 import com.android.Adapters.MyFragmentPagerAdapter;
+import com.android.BroadcastReceiver.NetworkChangeReceiver;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Global.GlobalStaticData;
 import com.android.Interface.IOnClickCategory;
 import com.android.Interface.IOnClickFilter;
@@ -73,9 +78,10 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     List<Article> listArticleRequest;
     CategoryAdapter categoryAdapter;
     ClearableEditText editTextSearch;
+    TextView tvHomeStatus;
 
     //main
-    Fragment hot_fragment = new Hot_Fragment();
+    Hot_Fragment hot_fragment = new Hot_Fragment();
 
 
     List<Fragment> fragmentList;
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     SpotsDialog progressDialog;
 
     APIFunction apiFunction;
+    BroadcastReceiver updateNetworkReciver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,6 +157,9 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         initIntent();
         mappings();
         initView();
+
+        NetworkChangeReceiver.register(this);
+        registerUpdateNetworkReciver();
     }
 
     private void initIntent() {
@@ -164,6 +174,9 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     }
 
     private void initView() {
+        tvHomeStatus = findViewById(R.id.tv_home_status);
+        updateHomeStatus(GlobalFunction.isNetworkAvailable(this));
+
         listCategory = apiFunction.getListCategory();
         categoryAdapter = new CategoryAdapter(this, listCategory);
         categoryAdapter.setiOnClickCategory(this);
@@ -302,24 +315,6 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         if (data == null) {
             return;
         }
-        if (requestCode == AppConfig.REQUEST_CODE_LOGIN_FROM_LinearLayoutLogin && resultCode == AppConfig.RESULT_CODE_LOGIN) {
-            UserMember user = (UserMember) data.getSerializableExtra(AppConfig.USER);
-            Toast.makeText(this, "Login Success!", Toast.LENGTH_SHORT).show();
-            if (Hot_Fragment.summary_adapter != null) {
-                Hot_Fragment.summary_adapter.notifyDataSetChanged();
-            }
-
-
-        }
-
-        if (resultCode == AppConfig.RESULT_CODE_LOGOUT) {
-            logout();
-            if (Hot_Fragment.summary_adapter != null) {
-                Hot_Fragment.summary_adapter.notifyDataSetChanged();
-            }
-
-
-        }
     }
 
 
@@ -335,6 +330,7 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         //GlobalStaticData.listPost.clear();
         progressDialog.show();
         listArticleRequest = apiFunction.getListArticle_byCategoryID(category.getCategoryID());
+        //GlobalFunction.saveOffLineList(this, listArticleRequest);
 
         intentPostsOnReQuest.putExtra(AppConfig.BARNAME, category.getName());
         intentPostsOnReQuest.putExtra(AppConfig.LISTPOST, (ArrayList) listArticleRequest);
@@ -519,16 +515,65 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
                 /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();*/
                 if (GlobalStaticData.getCurrentPage() == 0)
-                    Hot_Fragment.recyclerViewSummary.smoothScrollToPosition(0);
-
+                    hot_fragment.smoothScrollToTop();
             }
         });
         loadCurrentUser();
-        if (Hot_Fragment.summary_adapter != null) {
-            Hot_Fragment.summary_adapter.notifyDataSetChanged();
-        }
-
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        NetworkChangeReceiver.unregister(this);
+        unregisterUpdateNetworkReciver();
+    }
+
+    private void registerUpdateNetworkReciver() {
+        try {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(AppConfig.BROADCAST_UPDATE_UI);
+            updateNetworkReciver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent != null) {
+                        boolean isNetworkAvailable = intent.getBooleanExtra(AppConfig.BROADCAST_NETWORK_AVAILABLE, true);
+                        updateNetWork(isNetworkAvailable);
+                    }
+                }
+            };
+            registerReceiver(updateNetworkReciver, filter);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void unregisterUpdateNetworkReciver() {
+        try {
+            unregisterReceiver(updateNetworkReciver);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateHomeStatus(boolean isVisibility) {
+        if (tvHomeStatus != null) {
+            tvHomeStatus.setVisibility(isVisibility ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void updateCategoryNetwork(boolean isAvailable) {
+        if (isAvailable) {
+            listCategory = apiFunction.getListCategory();
+        } else {
+            listCategory.clear();
+        }
+        categoryAdapter.setData(listCategory);
+    }
+
+    private void updateNetWork(boolean isAvailable) {
+        updateHomeStatus(isAvailable);
+        hot_fragment.updateNetwork(isAvailable);
+        updateCategoryNetwork(isAvailable);
+    }
 
 }

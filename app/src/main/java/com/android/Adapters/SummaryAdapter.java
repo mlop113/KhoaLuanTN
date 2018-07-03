@@ -2,6 +2,8 @@ package com.android.Adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,8 +79,12 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 final Article articleHeader = listArticle.get(position);
                 final HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
                 try{
-
-                    Glide.with(context).load(apiFunction.getUrlImage(articleHeader.getCoverImage())).into(headerViewHolder.imageViewCover);
+                    if (articleHeader.getCoverImageOffLine() != null) {
+                        Bitmap bm = BitmapFactory.decodeByteArray(articleHeader.getCoverImageOffLine(), 0, articleHeader.getCoverImageOffLine().length);
+                        Glide.with(context).load(bm).into(headerViewHolder.imageViewCover);
+                    } else {
+                        Glide.with(context).load(apiFunction.getUrlImage(articleHeader.getCoverImage())).into(headerViewHolder.imageViewCover);
+                    }
                 }catch (IllegalArgumentException e){
                     e.printStackTrace();
                 }
@@ -105,7 +111,12 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 final ItemViewHolder itemViewHolder = (ItemViewHolder) holder;
                 //imageCover
                 try{
-                    Glide.with(context).load(article.getCoverImage()).into(itemViewHolder.imageViewCover);
+                    if (article.getCoverImageOffLine() != null) {
+                        Bitmap bm = BitmapFactory.decodeByteArray(article.getCoverImageOffLine(), 0, article.getCoverImageOffLine().length);
+                        Glide.with(context).load(bm).into(itemViewHolder.imageViewCover);
+                    } else {
+                        Glide.with(context).load(apiFunction.getUrlImage(article.getCoverImage())).into(itemViewHolder.imageViewCover);
+                    }
                 }catch (IllegalArgumentException e){
                     e.printStackTrace();
                 }
@@ -146,7 +157,7 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     public void onClick(View v) {
                         Intent intent = new Intent(context, PostsOnRequestActivity.class);
                         intent.putExtra(AppConfig.LISTPOST, (ArrayList) listArticleByCategory);
-                        intent.putExtra(AppConfig.BARNAME, category);
+                        intent.putExtra(AppConfig.BARNAME, category.getName());
                         context.startActivity(intent);
                     }
                 });
@@ -294,6 +305,9 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return listArticle == null && listCategory == null ? 0 : listArticle.size() + listCategory.size();
     }
 
+    public List<Article> getListArticle() {
+        return listArticle;
+    }
 
     public void setListArticle(List<Article> list) {
         this.listArticle.clear();

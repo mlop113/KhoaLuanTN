@@ -50,6 +50,16 @@
                         android:textSize="24sp" />
                 </RelativeLayout>
 
+                <TextView
+                    android:id="@+id/tv_home_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="Ket Noi That Bai"
+                    android:textColor="@color/white"
+                    android:background="@color/error_background"
+                    android:gravity="center"/>
+
                 <FrameLayout
                     android:id="@android:id/tabcontent"
                     android:layout_width="match_parent"

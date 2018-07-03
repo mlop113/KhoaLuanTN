@@ -10,7 +10,8 @@ public class AppConfig {
     public static int RESULT_CODE_LOGOUT=3;
     public static int REQUEST_CODE_LOGIN=4;
 
-
+    public static String BROADCAST_UPDATE_UI="BROADCAST_UPDATE_UI";
+    public static String BROADCAST_NETWORK_AVAILABLE="BROADCAST_NETWORK_AVAILABLE";
     public static String ACTION="action";
     public static String USER="user";
     public static String POST = "post";

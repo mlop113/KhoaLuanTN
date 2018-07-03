@@ -10,28 +10,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
-        <LinearLayout
-            android:id="@+id/linearLayoutTag"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_scrollFlags="scroll|enterAlways">
-
-            <android.support.v7.widget.RecyclerView
-                android:id="@+id/recyclerViewTag"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/actionbar_size"
-                android:background="@color/white"
-                android:orientation="horizontal"></android.support.v7.widget.RecyclerView>
-        </LinearLayout>
 
 
-
+        <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipp_refresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerViewSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"></android.support.v7.widget.RecyclerView>
+        </android.support.v4.widget.SwipeRefreshLayout>
     </LinearLayout>
 
 

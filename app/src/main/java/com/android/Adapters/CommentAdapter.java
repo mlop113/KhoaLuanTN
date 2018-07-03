@@ -30,12 +30,13 @@ import java.util.List;
  * Created by Ngoc Vu on 12/18/2017.
  */
 
-public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHolder>{
+public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHolder> {
     Context context;
     Article article;
     List<Comment> listComment = new ArrayList<>();
     AppPreferences appPreferences;
     APIFunction apiFunction;
+
     public CommentAdapter(Context context, Article article, List<Comment> listComment) {
         this.context = context;
         this.article = article;
@@ -46,7 +47,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_comment,parent,false));
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_comment, parent, false));
     }
 
     @Override
@@ -54,9 +55,9 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         final Comment comm = listComment.get(position);
         User user = apiFunction.getUser_byID(comm.getUserID());
         holder.textViewUsername.setText(user.getFullName());
-        try{
+        try {
             Glide.with(context).load(apiFunction.getUrlImage(user.getImage())).into(holder.imageViewUserComment);
-        }catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
 
@@ -65,24 +66,24 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         holder.textViewReplyComment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent =new Intent(context,FeedbackCommentActivity.class);
-                intent.putExtra(AppConfig.COMMENT,comm);
-                intent.putExtra(AppConfig.POST,article);
-                intent.putExtra(AppConfig.ACTION,AppConfig.COMMENT);
+                Intent intent = new Intent(context, FeedbackCommentActivity.class);
+                intent.putExtra(AppConfig.COMMENT, comm);
+                intent.putExtra(AppConfig.POST, article);
+                intent.putExtra(AppConfig.ACTION, AppConfig.COMMENT);
                 context.startActivity(intent);
             }
         });
 
         List<FeedbackComment> listFeedback = apiFunction.getListFeedback_byCommentID(comm.getCommentID());
-        if(listFeedback!=null) {
-            if ( listFeedback.size() > 0) {
+        if (listFeedback != null) {
+            if (listFeedback.size() > 0) {
                 holder.linearLayoutViewFeedback.setVisibility(View.VISIBLE);
                 holder.linearLayoutViewFeedback.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(context, FeedbackCommentActivity.class);
                         intent.putExtra(AppConfig.COMMENT, comm);
-                        intent.putExtra(AppConfig.POST,article);
+                        intent.putExtra(AppConfig.POST, article);
                         context.startActivity(intent);
                     }
                 });
@@ -93,9 +94,9 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
                 FeedbackComment feedbackComment = listFeedback.get(0);
                 User userFeedback = apiFunction.getUser_byID(feedbackComment.getUserID());
                 holder.textViewFeedbackUsername.setText(userFeedback.getFullName());
-                try{
+                try {
                     Glide.with(context).load(apiFunction.getUrlImage(userFeedback.getImage())).into(holder.imageViewUserReply);
-                }catch (IllegalArgumentException e){
+                } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 }
                 holder.textViewFeedbackContent.setText(feedbackComment.getContent());
@@ -113,7 +114,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
             }
         });*/
 
-        checkLiked(comm,holder.textViewLike);
+        checkLiked(comm, holder.textViewLike);
 
         /*holder.textViewLike.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,6 +131,12 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         notifyDataSetChanged();
     }
 
+    public void addList(List<Comment> comments) {
+        int positionStart = getItemCount();
+        this.listComment.addAll(comments);
+        notifyItemRangeInserted(positionStart, comments.size());
+    }
+
     @Override
     public int getItemViewType(int position) {
         return position;
@@ -142,11 +149,10 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
 
     @Override
     public int getItemCount() {
-        return listComment==null?0:listComment.size();
+        return listComment == null ? 0 : listComment.size();
     }
 
-    public void setData(List<Comment> listComment)
-    {
+    public void setData(List<Comment> listComment) {
         this.listComment.clear();
         this.listComment.addAll(listComment);
         notifyDataSetChanged();
@@ -185,7 +191,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
 
     }
 
-    private void onClickLikeComment(final Post post,Comment comment, final TextView textViewLike) {
+    private void onClickLikeComment(final Post post, Comment comment, final TextView textViewLike) {
         /*if(appPreferences.isLogin()) {
             String userId = appPreferences.getUserId();
             //get from user_post
@@ -213,7 +219,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         }*/
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder{
+    static class ViewHolder extends RecyclerView.ViewHolder {
         View v;
         TextView textViewUsername;
         TextView textViewContent;
@@ -228,6 +234,7 @@ public class CommentAdapter extends  RecyclerView.Adapter<CommentAdapter.ViewHol
         TextView textViewLike;
         TextView textViewLikeNumber;
         ImageView imageViewUserReply;
+
         public ViewHolder(View itemView) {
             super(itemView);
             this.v = itemView;
