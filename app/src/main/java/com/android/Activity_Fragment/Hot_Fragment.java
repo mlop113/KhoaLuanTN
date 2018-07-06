@@ -118,11 +118,17 @@ public class Hot_Fragment extends Fragment implements IOnClickFilter {
         summary_adapter = new SummaryAdapter(getContext(), listArticle, listCategory);
 
         recyclerViewSummary.setAdapter(summary_adapter);
+
+        swipeRefresh.setColorScheme(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 updateNetwork(GlobalFunction.isNetworkAvailable(getActivity()));
                 swipeRefresh.setRefreshing(false);
+                updateNetwork(GlobalFunction.isNetworkAvailable(getActivity()));
             }
         });
     }

@@ -6,4 +6,5 @@ package com.android.Interface;
 
 public interface IOnClickFeedback {
     void onClickFeedback();
+    void onClickLike();
 }

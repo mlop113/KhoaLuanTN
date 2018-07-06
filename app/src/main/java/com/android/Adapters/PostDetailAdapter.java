@@ -46,9 +46,11 @@ public class PostDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     RelatedAdapter related_adapterCategory;
     CommentAdapter comment_adapter;
 
+
     APIFunction apiFunction;
     public Handler handler;
     ProgressBar progressBar;
+
     public PostDetailAdapter() {
     }
 
@@ -165,22 +167,34 @@ public class PostDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         return comment_adapter.getItemCount();
     }
 
-    public void addComment(List<Comment> comments) {
-        comment_adapter.addList(comments);
+    public void addComment(Comment comment) {
+        comment_adapter.addComment(comment);
     }
 
-    public void loadMore(final List<Comment> comments) {
-        if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
-            handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    //   remove progress item
-                    addComment(comments);
-                    progressBar.setVisibility(View.GONE);
-                }
-            }, 2000);
+    public void updateComment(Comment comment, int position) {
+        comment_adapter.updateComment(comment, position);
+    }
+
+    private boolean isLoading;
+
+    public void loadMore() {
+        Log.d(TAG, "getItemCount: " + comment_adapter.getItemCount());
+        Log.d(TAG, "getListFull: " + comment_adapter.getListFull().size());
+        if (!isLoading && comment_adapter.checkAvalidableLoadMore()) {
+            if (progressBar != null) {
+                isLoading = true;
+                progressBar.setVisibility(View.VISIBLE);
+                handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        //   remove progress item
+                        comment_adapter.loadMore();
+                        progressBar.setVisibility(View.GONE);
+                        isLoading = false;
+                    }
+                }, 3000);
+            }
         }
     }
 
@@ -268,6 +282,7 @@ public class PostDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     static class ProgressBarHolder extends RecyclerView.ViewHolder {
         ProgressBar progressBar;
+
         public ProgressBarHolder(View itemView) {
             super(itemView);
             progressBar = itemView.findViewById(R.id.progress_bar);

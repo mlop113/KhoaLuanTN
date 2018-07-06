@@ -9,6 +9,8 @@ public class AppConfig {
     public static int RESULT_CODE_LOGIN=2;
     public static int RESULT_CODE_LOGOUT=3;
     public static int REQUEST_CODE_LOGIN=4;
+    public static int REQUEST_CODE_FEEDBACK=5;
+    public static int RESULT_CODE_FEEDBACK=6;
 
     public static String BROADCAST_UPDATE_UI="BROADCAST_UPDATE_UI";
     public static String BROADCAST_NETWORK_AVAILABLE="BROADCAST_NETWORK_AVAILABLE";
@@ -18,6 +20,10 @@ public class AppConfig {
     public static String LISTPOST="listpost";
     public static String BARNAME="barname";
     public static String COMMENT="comment";
+    public static String DATA_CHANGE="DATA_CHANGE";
+    public static String COMMENT_POSITION="COMMENT_POSITION";
+
+
 
     public static String FIREBASE_FIELD_POSTS="Posts";
     public static String FIREBASE_FIELD_COMMENTS="comments";

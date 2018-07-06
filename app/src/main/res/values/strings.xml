@@ -1,11 +1,13 @@
 <resources>
     <string name="app_name">Football News</string>
-   <string name="banner_ad_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="banner_ad_app_id">ca-app-pub-3940256099942544~3347511713</string>
     <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
     <!--<string name="banner_ad_app_id">ca-app-pub-5917310053120916~1718287886</string>
     <string name="banner_ad_unit_id">ca-app-pub-5917310053120916/9782688156</string>-->
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="btn_cancel">Xóa</string>
+    <string name="btn_ok">Đồng ý</string>
     <string name="action_bookmarks">Trang đánh dấu</string>
     <string name="action_fillter">Bộ lọc</string>
     <string name="action_clearfillter">Xóa bộ lọc</string>
@@ -23,4 +25,17 @@
     <string name="savebookmark">Đã lưu bài viết</string>
     <string name="removebookmark">Đã bỏ lưu bài viết</string>
     <string name="login_facebook">Login Facebook</string>
+    <string name="like">Thích</string>
+    <string name="unlike">Bỏ thích</string>
+    <string name="comment_like">Thích</string>
+    <string name="comment_unlike">Bỏ thích</string>
+    <string name="comment_reply">Trả lời</string>
+    <string name="comment_edit">Chỉnh sửa bình luận</string>
+    <string name="comment_delete">Xóa bình luận</string>
+    <string name="comment_report">Gửi phản hồi hoặc báo cáo bình luận</string>
+    <string name="comment_delete_title">Xóa bình luận</string>
+    <string name="comment_delete_content">Bạn có chắc muốn xóa bình luận này?</string>
+    <string name="action_edit">sửa</string>
+    <string name="action_report">tố cáo</string>
+
 </resources>

@@ -57,6 +57,7 @@ dependencies {
     compile 'com.google.firebase:firebase-appindexing:15.0.0'
     compile 'com.google.android.gms:play-services-plus:15.0.0'
     compile 'com.facebook.android:facebook-android-sdk:[4,5)'
+    implementation 'com.facebook.android:facebook-login:[4,5)'
     compile 'com.github.d-max:spots-dialog:0.4@aar'
     testCompile 'junit:junit:4.12'
     compile 'com.github.bumptech.glide:glide:4.4.0'

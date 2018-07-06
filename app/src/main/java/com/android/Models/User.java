@@ -9,8 +9,6 @@ public class User implements Serializable {
     private String userID;
     @SerializedName("Email")
     private String email;
-    @SerializedName("PassWord")
-    private String passWord;
     @SerializedName("FullName")
     private String fullName;
     @SerializedName("Image")
@@ -18,22 +16,15 @@ public class User implements Serializable {
     @SerializedName("DateCreate")
     private String dateCreate;
     @SerializedName("User_LevelID")
-    private String User_LevelID;
-    @SerializedName("Note")
-    private String note;
-    @SerializedName("Status")
-    private String status;
+    private String user_LevelID;
 
-    public User(String userID, String email, String passWord, String fullName, String image, String dateCreate, String user_LevelID, String note, String status) {
+    public User(String userID, String email, String fullName, String image, String dateCreate, String user_LevelID) {
         this.userID = userID;
         this.email = email;
-        this.passWord = passWord;
         this.fullName = fullName;
         this.image = image;
         this.dateCreate = dateCreate;
-        User_LevelID = user_LevelID;
-        this.note = note;
-        this.status = status;
+        this.user_LevelID = user_LevelID;
     }
 
     public String getUserID() {
@@ -50,14 +41,6 @@ public class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPassWord() {
-        return passWord;
-    }
-
-    public void setPassWord(String passWord) {
-        this.passWord = passWord;
     }
 
     public String getFullName() {
@@ -85,26 +68,10 @@ public class User implements Serializable {
     }
 
     public String getUser_LevelID() {
-        return User_LevelID;
+        return user_LevelID;
     }
 
     public void setUser_LevelID(String user_LevelID) {
-        User_LevelID = user_LevelID;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+        this.user_LevelID = user_LevelID;
     }
 }

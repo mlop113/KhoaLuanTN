@@ -1,10 +1,13 @@
 package com.android.Activity_Fragment;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -12,26 +15,37 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.API.APIFunction;
+import com.android.API.Response;
 import com.android.Adapters.FeedbackCommentAdapter;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Interface.IOnClickFeedback;
-import com.android.Login;
 import com.android.Models.Article;
 import com.android.Models.Comment;
+import com.android.Models.Comment_UserModel;
+import com.android.Models.FeedbackComment;
+import com.android.Models.ReportFeedbackComment;
 import com.android.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
  * Created by Ngoc Vu on 12/18/2017.
  */
 
-public class FeedbackCommentActivity extends AppCompatActivity implements View.OnClickListener,IOnClickFeedback {
+public class FeedbackCommentActivity extends AppCompatActivity implements View.OnClickListener, IOnClickFeedback, FeedbackCommentAdapter.FeedbackCommentInterface  {
+    final static String TAG = "FeedbackCommentActivity";
+    private final String ACTION_COMMENT_INSERT = "ACTION_COMMENT_INSERT";
+    private final String ACTION_COMMENT_EDIT = "ACTION_COMMENT_EDIT";
+    private final String ACTION_COMMENT_REPORT = "ACTION_COMMENT_REPORT";
     InputMethodManager inputMethodManager;
     //animation
     Animation animlike;
@@ -57,9 +71,19 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     EditText editTextComment;
     LinearLayout linearLayoutSend;
     ImageView imageViewSend;
+    LinearLayout linearLayoutClear;
+    TextView textViewAction;
 
     DatabaseReference databaseReference;
     AppPreferences appPreferences;
+
+    private boolean isLogin = true;
+    private APIFunction apiFunction;
+
+    //edit comment
+    String action = ACTION_COMMENT_INSERT;
+    FeedbackComment currentFeedbackComment = null;
+    int currentFeedbackCommentPosition = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +91,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         setContentView(R.layout.activity_feedback_comment);
         appPreferences = AppPreferences.getInstance(this);
         databaseReference = FirebaseDatabase.getInstance().getReference();
-
+        apiFunction = APIFunction.getInstance();
         inputMethodManager = (InputMethodManager) getSystemService(this.INPUT_METHOD_SERVICE);
 
         //animation
@@ -75,12 +99,10 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         animshake = AnimationUtils.loadAnimation(this, R.anim.animshake);
 
         intent = getIntent();
-        if(intent!=null)
-        {
+        if (intent != null) {
             comment = (Comment) intent.getSerializableExtra(AppConfig.COMMENT);
             article = (Article) intent.getSerializableExtra(AppConfig.POST);
-        }
-        else {
+        } else {
             finish();
             Toast.makeText(this, "Error data tranfer", Toast.LENGTH_SHORT).show();
         }
@@ -101,10 +123,12 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         editTextComment = (EditText) findViewById(R.id.editTextComment);
         linearLayoutSend = (LinearLayout) findViewById(R.id.linearLayoutSend);
         imageViewSend = (ImageView) findViewById(R.id.imageViewSend);
+        linearLayoutClear = findViewById(R.id.linearLayoutClear);
+        textViewAction = findViewById(R.id.textViewAction);
     }
 
     private void initView() {
-        feedbackCommentAdapter = new FeedbackCommentAdapter(this,article,comment);
+        feedbackCommentAdapter = new FeedbackCommentAdapter(this, article, comment);
         feedbackCommentAdapter.setiOnClickFeedback(this);
         recyclerViewFeedbackComment.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewFeedbackComment.setAdapter(feedbackCommentAdapter);
@@ -117,12 +141,12 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         //bottom
         linearLayoutLike.setOnClickListener(this);
         linearLayoutSend.setOnClickListener(this);
+        linearLayoutClear.setOnClickListener(this);
     }
 
-    boolean isLiked=false;
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.linearLayoutBack:
                 finish();
                 break;
@@ -131,41 +155,155 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                 onClickLikeComment();
                 break;
             case R.id.linearLayoutSend:
-                if(appPreferences.isLogin()) {
-                    Date myDate = new Date();
-                    /*if (!TextUtils.isEmpty(editTextComment.getText().toString().trim())) {
-                        final ReplyComment replyComment = new ReplyComment(editTextComment.getText().toString().trim()
-                                , new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate), appPreferences.getUserId());
-                        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS)
-                                .child(comment.getCommentId()).child(AppConfig.FIREBASE_FIELD_REPLYCOMMENTS).push().setValue(replyComment, new DatabaseReference.CompletionListener() {
-                            @Override
-                            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-                                Toast.makeText(FeedbackCommentActivity.this, "sent", Toast.LENGTH_SHORT).show();
-                                editTextComment.clearFocus();
-                                editTextComment.setText("");
-                                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                                imageViewSend.startAnimation(animshake);
-                                recyclerViewFeedbackComment.smoothScrollToPosition(View.FOCUS_DOWN);
+                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+                if (isLogin) {
+                    if (GlobalFunction.isNetworkAvailable(this)) {
+                        long time = new java.util.Date().getTime();
+                        String feedbackID = Long.toString(time);
+                        Date myDate = new Date();
+                        String content = editTextComment.getText().toString();
+                        /*if (!TextUtils.isEmpty(content)) {
+                            editTextComment.setText("");
+                            imageViewSend.startAnimation(animshake);
+                            FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
+                                    , content,
+                                    new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                    "1");
+                            new SendFeedbackAsyncTask().execute(feedbackComment);
+                        }*/
+                        if (!TextUtils.isEmpty(content)) {
+                            editTextComment.setText("");
+                            imageViewSend.startAnimation(animshake);
+                            if (action.equals(ACTION_COMMENT_INSERT)) {
+                                FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
+                                        , content,
+                                        new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                        "1");
+                                new SendRequestAsyncTask().execute(feedbackComment);
+                            } else if (action.equals(ACTION_COMMENT_EDIT)) {
+                                currentFeedbackComment.setContent(content);
+                                new SendRequestAsyncTask().execute(currentFeedbackComment);
+                            } else if (action.equals(ACTION_COMMENT_REPORT)) {
+                                FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
+                                        , content,
+                                        new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                        "1");
+                                new SendRequestAsyncTask().execute(feedbackComment);
                             }
-                        });
-
-
-                    }*/
+                        }
+                    } else {
+                        Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    //show dialog login
                 }
-                else{
-                    Intent intentLogin = new Intent(this,Login.class);
-                    startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-                }
+                break;
+            case R.id.linearLayoutClear:
+                clearAction();
                 break;
         }
 
     }
 
+    private void clearAction() {
+        action = ACTION_COMMENT_INSERT;
+        editTextComment.setText("");
+        textViewAction.setText("");
+        currentFeedbackCommentPosition = -1;
+        currentFeedbackComment = null;
+        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+    }
+
+    @Override
+    public void onEditFeedbackComment(FeedbackComment feedbackComment, int position) {
+        action = ACTION_COMMENT_EDIT;
+        currentFeedbackComment = feedbackComment;
+        currentFeedbackCommentPosition = position;
+        editTextComment.requestFocus();
+        editTextComment.setText(feedbackComment.getContent());
+        editTextComment.setSelection(editTextComment.getText().toString().length());
+        textViewAction.setText(R.string.action_edit);
+        inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    @Override
+    public void onReportFeedbackComment(FeedbackComment feedbackComment) {
+        action = ACTION_COMMENT_REPORT;
+        currentFeedbackComment = feedbackComment;
+        editTextComment.requestFocus();
+        textViewAction.setText(R.string.action_report);
+        inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    class SendRequestAsyncTask extends AsyncTask<FeedbackComment, Void, Response> {
+        FeedbackComment feedbackComment = null;
+
+        @Override
+        protected Response doInBackground(FeedbackComment... feedbackComments) {
+            feedbackComment = feedbackComments[0];
+            if (feedbackComment != null) {
+                switch (action) {
+                    case ACTION_COMMENT_INSERT:
+                        return apiFunction.insertFeedbackComment(feedbackComment);
+                    case ACTION_COMMENT_EDIT:
+                        return apiFunction.updateFeedbackComment(feedbackComment);
+                    case ACTION_COMMENT_REPORT:
+                        ReportFeedbackComment reportFeedbackComment = new ReportFeedbackComment(feedbackComment.getFeedbackCommentID(),
+                                currentFeedbackComment.getFeedbackCommentID(), feedbackComment.getContent()
+                                , feedbackComment.getDateCreate(), feedbackComment.getUserID());
+                        return apiFunction.reportFeedbackComment(reportFeedbackComment);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Response response) {
+            super.onPostExecute(response);
+            String tempAction = "";
+            String result = "";
+            switch (action) {
+                case ACTION_COMMENT_INSERT:
+                    tempAction = "Bình luận ";
+                    break;
+                case ACTION_COMMENT_EDIT:
+                    tempAction = "Chỉnh sửa bình luận ";
+                    break;
+                case ACTION_COMMENT_REPORT:
+                    tempAction = "Tố cáo bình luận ";
+                    break;
+            }
+            if (response == null || !response.isSuccess()) {
+                result = "không thành công";
+            } else {
+                switch (action) {
+                    case ACTION_COMMENT_INSERT:
+                        feedbackCommentAdapter.addFeedbackComment(feedbackComment);
+                        break;
+                    case ACTION_COMMENT_EDIT:
+                        feedbackCommentAdapter.updateFeedbackComment(feedbackComment,currentFeedbackCommentPosition);
+                        break;
+                    case ACTION_COMMENT_REPORT:
+                        break;
+                }
+                result = "thành công";
+            }
+            clearAction();
+            Toast.makeText(FeedbackCommentActivity.this, tempAction + result, Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     @Override
     public void finish() {
+        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+        Intent intent = new Intent();
+        intent.putExtra(AppConfig.DATA_CHANGE, true);
+        intent.putExtra(AppConfig.COMMENT, comment);
+        intent.putExtra(AppConfig.COMMENT_POSITION, getIntent().getIntExtra(AppConfig.COMMENT_POSITION, -1));
+        setResult(AppConfig.RESULT_CODE_FEEDBACK, intent);
         super.finish();
-        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(),0);
+        Log.d(TAG, "finish: ");
     }
 
     @Override
@@ -174,9 +312,10 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         checkAction();
         feedbackCommentAdapter.notifyDataSetChanged();
     }
-    private void checkAction(){
-        if(intent!=null){
-            if(intent.getStringExtra(AppConfig.ACTION)!=null) {
+
+    private void checkAction() {
+        if (intent != null) {
+            if (intent.getStringExtra(AppConfig.ACTION) != null) {
                 String action = intent.getStringExtra(AppConfig.ACTION);
                 if (action.equals(AppConfig.COMMENT)) {
                     editTextComment.requestFocus();
@@ -192,79 +331,57 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
     }
 
+    @Override
+    public void onClickLike() {
+        onClickLikeComment();
+    }
 
     private void checkLiked() {
-        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.hasChild(AppConfig.FIREBASE_FIELD_USERLIKEIDS)) {
-                    String userId = appPreferences.getUserId();
-                    Comment comment1 = dataSnapshot.getValue(Comment.class);
-                    List<String> userLikeId = comment1.getUserLikeIds();
-                    long count = dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount();
-                    if (userLikeId != null && count > 0) {
-                        if (userLikeId.contains(userId)) {
-                            imageViewLike.setImageResource(R.drawable.ic_liked);
-                        } else {
-                            imageViewLike.setImageResource(R.drawable.ic_like);
-                        }
-                    } else {
-                        imageViewLike.setImageResource(R.drawable.ic_like);
-                    }
-                }
-                else {
-                    imageViewLike.setImageResource(R.drawable.ic_like);
-                }
-
+        if (isLogin) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), "1")) {
+                imageViewLike.setImageResource(R.drawable.ic_liked);
+            } else {
+                imageViewLike.setImageResource(R.drawable.ic_like);
             }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });*/
-
+        } else {
+            imageViewLike.setImageResource(R.drawable.ic_like);
+        }
     }
 
     private void onClickLikeComment() {
-        /*if(appPreferences.isLogin()) {
-            String userId = appPreferences.getUserId();
-            //get from user_post
-            if (comment.getUserLikeIds() != null && comment.getUserLikeIds().size() > 0) {
-                //if user liked this post
-                if (comment.getUserLikeIds().contains(userId)) {
-                    comment.getUserLikeIds().remove(userId);
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).setValue(comment.getUserLikeIds());
+        if (isLogin) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), "1")) {
+                Response response = apiFunction.deleteLikeComment(new Comment_UserModel(comment.getCommentID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
-                    comment.getUserLikeIds().add(userId);
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).setValue(comment.getUserLikeIds());
-                    imageViewLike.startAnimation(animlike);
+                    Log.d(TAG, "deleteLikeComment: false");
                 }
             } else {
-                comment.setUserLikeIds(new ArrayList<String>());
-                comment.getUserLikeIds().add(userId);
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                        .child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).setValue(comment.getUserLikeIds());
-                imageViewLike.startAnimation(animlike);
+                Response response = apiFunction.insertLikeComment(new Comment_UserModel(comment.getCommentID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    imageViewLike.startAnimation(animlike);
+                    imageViewLike.setImageResource(R.drawable.ic_liked);
+                } else {
+                    Log.d(TAG, "insertLikeComment: false");
+                }
             }
+            if (feedbackCommentAdapter != null) {
+                feedbackCommentAdapter.notifyItemChanged(0);
+            }
+        } else {
+            //show dialog login
         }
-        else{
-            Intent intentLogin = new Intent(this,Login.class);
-            startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }*/
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(data==null) {
+        if (data == null) {
             return;
         }
 
-        if(requestCode==AppConfig.REQUEST_CODE_LOGIN && resultCode==AppConfig.RESULT_CODE_LOGIN)
-        {
+        if (requestCode == AppConfig.REQUEST_CODE_LOGIN && resultCode == AppConfig.RESULT_CODE_LOGIN) {
             feedbackCommentAdapter.notifyDataSetChanged();
         }
     }

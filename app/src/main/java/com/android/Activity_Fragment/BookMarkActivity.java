@@ -6,6 +6,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -27,7 +28,7 @@ import dmax.dialog.SpotsDialog;
  */
 
 public class BookMarkActivity extends AppCompatActivity implements View.OnClickListener {
-    public static List<Article> listArticle = new ArrayList<>();
+    List<Article> listArticle = new ArrayList<>();
     String barname="";
     //back
     LinearLayout linearLayoutBack;
@@ -38,7 +39,7 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
 
     //recyclerViewPostOnReQuest
     RecyclerView recyclerViewPostOnReQuest;
-    public static PostsOnRequestAdapter postsOnRequestAdapter;
+    PostsOnRequestAdapter postsOnRequestAdapter;
 
 
     ValueEventListener valueEventListener;
@@ -57,6 +58,7 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
         {
             listArticle=new ArrayList<Article>();
             listArticle =  (List<Article>) intent.getSerializableExtra(AppConfig.LISTPOST);
+            Log.d("BookMarkActivity", "listArticle: "+listArticle.size());
             barname = intent.getStringExtra(AppConfig.BARNAME);
         }
         else

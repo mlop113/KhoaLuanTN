@@ -1,6 +1,5 @@
 package com.android;
 
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,11 +16,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -32,6 +28,7 @@ import com.aigestudio.wheelpicker.widgets.WheelMonthPicker;
 import com.aigestudio.wheelpicker.widgets.WheelYearPicker;
 import com.android.API.APIFunction;
 import com.android.Activity_Fragment.Hot_Fragment;
+import com.android.Activity_Fragment.LoginDialogActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Adapters.CategoryAdapter;
 import com.android.Adapters.MyFragmentPagerAdapter;
@@ -45,7 +42,6 @@ import com.android.Interface.IOnClickFilter;
 import com.android.Models.Article;
 import com.android.Models.Category;
 import com.android.Models.Post;
-import com.android.Models.User;
 import com.android.Models.UserMember;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -56,22 +52,20 @@ import com.google.firebase.database.ValueEventListener;
 
 import org.droidparts.widget.ClearableEditText;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 
 public class MainActivity extends AppCompatActivity implements IOnClickCategory, ViewPager.OnPageChangeListener, View.OnClickListener {
+    private final String TAG = getClass().getSimpleName();
+    private final String CLIENT_SEND_IMAGE = "CLIENT_SEND_IMAGE";
+    private final String SERVER_SEND_IMAGE = "SERVER_SEND_IMAGE";
     AppPreferences appPreferences;
     InputMethodManager inputMethodManager;
     //actionbar
     ImageButton imageButtonPlus;
     DrawerLayout drawer;
-    //dialogLogin
-    Dialog dialogLogin;
     //drawer and listCategory
     private RecyclerView recyclerViewCategory;
     List<Category> listCategory = new ArrayList<>();
@@ -150,8 +144,6 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         //  inittabhot();
         //show menu "+"
         initMenuplus();
-        //dialog filter
-        initDialogLogin();
 
         apiFunction = new APIFunction();
         initIntent();
@@ -160,7 +152,9 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
 
         NetworkChangeReceiver.register(this);
         registerUpdateNetworkReciver();
+
     }
+
 
     private void initIntent() {
         intentPostsOnReQuest = new Intent(this, PostsOnRequestActivity.class);
@@ -409,85 +403,18 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         imageButtonPlus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dialogLogin.show();
-//                PopupMenu popupMenu = new PopupMenu(MainActivity.this, imageButtonPlus);
-//                popupMenu.inflate(R.menu.main);
-//                switch (GlobalStaticData.getCurrentPage()){
-//                    case 0:
-//                        if(isFilterHot)
-//                            popupMenu.getMenu().findItem(R.id.action_clearfilter).setEnabled(true);
-//                        else
-//                            popupMenu.getMenu().findItem(R.id.action_clearfilter).setEnabled(false);
-//                        break;
-//                    case 1:
-//                        if(isFilterNew)
-//                            popupMenu.getMenu().findItem(R.id.action_clearfilter).setEnabled(true);
-//                        else
-//                            popupMenu.getMenu().findItem(R.id.action_clearfilter).setEnabled(false);
-//                        break;
-//                }
-//
-//
-//                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-//                    @Override
-//                    public boolean onMenuItemClick(MenuItem item) {
-//                        switch (item.getItemId()) {
-//                            case R.id.action_filter:
-//                                dialogFilter.show();
-//                                break;
-//                            case R.id.action_clearfilter:
-//                                clearFilter();
-//                                break;
-//                            case R.id.action_bookmarks:
-//                                GlobalFunction.onClickViewBookMark(MainActivity.this,progressDialog);
-//                                return true;
-//
-//                        }
-//                        return false;
-//                    }
-//                });
-//                popupMenu.show();
+                startActivity(new Intent(MainActivity.this, LoginDialogActivity.class));
+
             }
         });
 
     }
 
-    private void initDialogLogin() {
-        Date today = new Date(System.currentTimeMillis());
-        DateFormat timeFormat = SimpleDateFormat.getDateTimeInstance();
-        // khởi tạo dialog
-        dialogLogin = new Dialog(this, R.style.NoTitleDialog);
-        // xét layout cho dialog
-        dialogLogin.setContentView(R.layout.layout_login_new);
-
-        Button btnLogin = dialogLogin.findViewById(R.id.btnLogin);
-
-        btnLogin.setOnClickListener(this);
-
-    }
 
     //funtion clickView: LayoutUser, dialog
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btnLogin:
-                String email = ((EditText) dialogLogin.findViewById(R.id.edtEmail)).getText().toString();
-                String password = ((EditText) dialogLogin.findViewById(R.id.edtPassword)).getText().toString();
-                if (TextUtils.isEmpty(email)) {
-                    Toast.makeText(this, "Enter your email!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (TextUtils.isEmpty(password)) {
-                    Toast.makeText(this, "Enter your password!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                User user = apiFunction.loginUserByEmail(email, password);
-                if (user != null) {
-                    Toast.makeText(this, "login success", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "login unsuccess", Toast.LENGTH_SHORT).show();
-                }
-                break;
         }
     }
 

@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.android.Global.AppConfig;
+import com.android.Global.GlobalStaticData;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -47,7 +48,7 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
     private boolean isOnline(Context context) {
         if (isOnline2(context)) {
             try {
-                HttpURLConnection urlc = (HttpURLConnection) (new URL("http://192.168.1.114:3000/").openConnection());
+                HttpURLConnection urlc = (HttpURLConnection) (new URL(GlobalStaticData.URL_HOST).openConnection());
                 urlc.setRequestProperty("User-Agent", "Test");
                 urlc.setRequestProperty("Connection", "close");
                 urlc.setConnectTimeout(1500);

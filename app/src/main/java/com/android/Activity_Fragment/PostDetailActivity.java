@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
@@ -24,19 +25,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.API.APIFunction;
-import com.android.API.ResponseModel;
+import com.android.API.Response;
+import com.android.Adapters.CommentAdapter;
 import com.android.Adapters.PostDetailAdapter;
 import com.android.BroadcastReceiver.NetworkChangeReceiver;
+import com.android.CustomView.CustomSnackbar;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
 import com.android.Global.GlobalStaticData;
 import com.android.Models.Article;
+import com.android.Models.Article_UserModel;
 import com.android.Models.Comment;
+import com.android.Models.ReportComment;
 import com.android.R;
-import com.github.nkzawa.emitter.Emitter;
-import com.github.nkzawa.socketio.client.IO;
-import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -44,11 +46,9 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 
@@ -56,13 +56,16 @@ import dmax.dialog.SpotsDialog;
  * Created by Ngoc Vu on 12/18/2017.
  */
 
-public class PostDetailActivity extends AppCompatActivity implements View.OnClickListener {
+public class PostDetailActivity extends AppCompatActivity implements View.OnClickListener, CommentAdapter.CommentInterface {
     private String TAG = this.getClass().getName();
+    private final String ACTION_COMMENT_INSERT = "ACTION_COMMENT_INSERT";
+    private final String ACTION_COMMENT_EDIT = "ACTION_COMMENT_EDIT";
+    private final String ACTION_COMMENT_REPORT = "ACTION_COMMENT_REPORT";
     Handler handler;
     AppPreferences appPreferences;
     InputMethodManager inputMethodManager;
     //
-    SwipeRefreshLayout swiperefresh;
+    SwipeRefreshLayout swipeRefresh;
     //animation
     Animation animlike;
     Animation animshake;
@@ -70,7 +73,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     LinearLayout linearLayoutBack;
     //bookmark
     LinearLayout linearLayoutBookmark;
-
+    ImageView imageViewBookmark;
     //data Post
     RecyclerView recyclerViewPostDetail;
     PostDetailAdapter postDetailAdapter;
@@ -83,42 +86,33 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     EditText editTextComment;
     LinearLayout linearLayoutSend;
     ImageView imageViewSend;
+    LinearLayout linearLayoutClear;
+    TextView textViewAction;
+    ;
 
     DatabaseReference databaseReference;
 
     //dialog wait
     SpotsDialog progressDialog;
     //progressbass load more
-    private boolean isLoading;
+
+    private boolean isConnectNetwork;
     private int visibleThreshold = 5;
     private int lastVisibleItem, totalItemCount;
     private LinearLayoutManager linearLayoutManager;
-    //socket
-    private final String CLIENT_SEND_GETPOST = "CLIENT_SEND_GETPOST";
-    private final String SERVER_SEND_GETPOST = "SERVER_SEND_GETPOST";
-    private Socket mSocket;
-    Emitter.Listener onGetPost;
-
-    {
-        try {
-            mSocket = IO.socket(GlobalStaticData.URL_HOST);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-
-        onGetPost = new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                handleGetPost(args);
-            }
-        };
-    }
 
     APIFunction apiFunction;
     //
     TextView tvPostDetailStatus;
     BroadcastReceiver updateNetworkReciver;
     private AdView mAdView;
+
+    boolean isLogin = true;
+
+    //edit comment
+    String action = ACTION_COMMENT_INSERT;
+    Comment currentCommnet = null;
+    int currentCommentPosition = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,10 +152,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         initView();
         event();
 
-        //SOCKET
-        initSocket();
-        addEvent();
-        updateNetWork(GlobalFunction.isNetworkAvailable(this));
+        updateNetwork(GlobalFunction.isNetworkAvailable(this));
         NetworkChangeReceiver.register(this);
         registerUpdateNetworkReciver();
     }
@@ -196,36 +187,40 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void mapping() {
-        swiperefresh = findViewById(R.id.swipp_refresh);
+        swipeRefresh = findViewById(R.id.swipp_refresh);
         //back
-        linearLayoutBack = (LinearLayout) findViewById(R.id.linearLayoutBack);
+        linearLayoutBack = findViewById(R.id.linearLayoutBack);
         //bookmark
-        linearLayoutBookmark = (LinearLayout) findViewById(R.id.linearLayoutBookmark);
+        linearLayoutBookmark = findViewById(R.id.linearLayoutBookmark);
+        imageViewBookmark = findViewById(R.id.imageViewBookmark);
         //status
         tvPostDetailStatus = findViewById(R.id.tv_post_detail_status);
 
         //recyclerView contant content,tag,related and comment
-        recyclerViewPostDetail = (RecyclerView) findViewById(R.id.recyclerViewPostDetail);
+        recyclerViewPostDetail = findViewById(R.id.recyclerViewPostDetail);
 
         //bottom
-        linearLayoutLike = (LinearLayout) findViewById(R.id.linearLayoutLike);
-        imageViewLike = (ImageView) findViewById(R.id.imageViewLike);
-        editTextComment = (EditText) findViewById(R.id.editTextComment);
-        linearLayoutSend = (LinearLayout) findViewById(R.id.linearLayoutSend);
-        imageViewSend = (ImageView) findViewById(R.id.imageViewSend);
+        linearLayoutLike = findViewById(R.id.linearLayoutLike);
+        imageViewLike = findViewById(R.id.imageViewLike);
+        editTextComment = findViewById(R.id.editTextComment);
+        linearLayoutSend = findViewById(R.id.linearLayoutSend);
+        imageViewSend = findViewById(R.id.imageViewSend);
+        linearLayoutClear = findViewById(R.id.linearLayoutClear);
+        textViewAction = findViewById(R.id.textViewAction);
     }
 
     private void initView() {
 
-        swiperefresh.setColorScheme(android.R.color.holo_blue_bright,
+        swipeRefresh.setColorScheme(android.R.color.holo_blue_bright,
                 android.R.color.holo_green_light,
                 android.R.color.holo_orange_light,
                 android.R.color.holo_red_light);
-        swiperefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 postDetailAdapter.notifyDataSetChanged();
-                swiperefresh.setRefreshing(false);
+                swipeRefresh.setRefreshing(false);
+                updateNetwork(GlobalFunction.isNetworkAvailable(PostDetailActivity.this));
             }
         });
 
@@ -235,6 +230,12 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         recyclerViewPostDetail.setAdapter(postDetailAdapter);
 
         checkLiked(imageViewLike);
+
+        if (isLogin) {
+            if (apiFunction.checkBoorkmark(article.getArticleID(), "1")) {
+                imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
+            }
+        }
 
     }
 
@@ -246,31 +247,21 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         //bottom
         linearLayoutLike.setOnClickListener(this);
         linearLayoutSend.setOnClickListener(this);
+        linearLayoutClear.setOnClickListener(this);
+
         linearLayoutManager = (LinearLayoutManager) recyclerViewPostDetail.getLayoutManager();
         recyclerViewPostDetail.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            public void onScrolled(final RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 totalItemCount = linearLayoutManager.getItemCount();
                 lastVisibleItem = linearLayoutManager
                         .findLastVisibleItemPosition();
-                if (!isLoading && GlobalFunction.isNetworkAvailable(PostDetailActivity.this)
+                if (isConnectNetwork
                         && totalItemCount <= (lastVisibleItem + visibleThreshold)) {
                     //postDetailAdapter.updateProgressBarLoadMore(true);
-                    Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d(TAG, "onScrolled: ");
-                            List<Comment> comments = new ArrayList<>();
-                            comments.add(new Comment("1", "1", "1", "1", "1"));
-                            comments.add(new Comment("1", "1", "1", "1", "1"));
-                            postDetailAdapter.loadMore(comments);
-                            //postDetailAdapter.updateProgressBarLoadMore(false);
-                            isLoading = false;
-                        }
-                    }, 2000);
-                    isLoading = true;
+                    Log.d(TAG, "onScrolled: ");
+                    postDetailAdapter.loadMore();
                 }
             }
         });
@@ -305,175 +296,217 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 onClickLikePost(imageViewLike);
                 break;
             case R.id.linearLayoutSend:
-                if (GlobalFunction.isNetworkAvailable(this)) {
-                    long time = new java.util.Date().getTime();
-                    String commentID = Long.toString(time);
-                    Date myDate = new Date();
-                    String content = editTextComment.getText().toString();
-                    if (!TextUtils.isEmpty(content)) {
-                        Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
-                                new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                "1", article.getArticleID());
-                        ResponseModel response = apiFunction.insertComment(comment);
-                        if (response != null && response.getMessage().contains("complete")) {
-                            Log.d(TAG, "onClick: response: " + response.getMessage());
-                            Toast.makeText(this, "Bình luận thành công!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.d(TAG, "onClick: response: " + response.getMessage());
-                            Toast.makeText(this, "Bình luận không thành công!", Toast.LENGTH_SHORT).show();
+                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+                if (isLogin) {
+                    if (isConnectNetwork) {
+                        long time = new java.util.Date().getTime();
+                        String commentID = Long.toString(time);
+                        Date myDate = new Date();
+                        String content = editTextComment.getText().toString();
+                        if (!TextUtils.isEmpty(content)) {
+                            editTextComment.setText("");
+                            imageViewSend.startAnimation(animshake);
+                            if (action.equals(ACTION_COMMENT_INSERT)) {
+                                Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
+                                        new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                        "1", article.getArticleID());
+                                new SendRequestAsyncTask().execute(comment);
+                            } else if (action.equals(ACTION_COMMENT_EDIT)) {
+                                currentCommnet.setContent(content);
+                                new SendRequestAsyncTask().execute(currentCommnet);
+                            } else if (action.equals(ACTION_COMMENT_REPORT)) {
+                                Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
+                                        new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
+                                        "1", article.getArticleID());
+                                new SendRequestAsyncTask().execute(comment);
+                            }
                         }
-
+                    } else {
+                        Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
+                    //show dialog login
                 }
-                editTextComment.setText("");
-                inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+                break;
+            case R.id.linearLayoutClear:
+                clearAction();
                 break;
         }
     }
 
-    private void checkLiked(final ImageView imageViewLike) {
+    private void clearAction() {
+        action = ACTION_COMMENT_INSERT;
+        editTextComment.setText("");
+        textViewAction.setText("");
+        currentCommentPosition = -1;
+        currentCommnet = null;
+        inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
+    }
 
-        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String userId = appPreferences.getUserId();
-                post = dataSnapshot.getValue(Post.class);
-                if (post.getUserLikeIds() != null && post.getUserLikeIds().size() > 0) {
-                    if (post.getUserLikeIds().contains(userId)) {
-                        imageViewLike.setImageResource(R.drawable.ic_liked);
-                    } else {
-                        imageViewLike.setImageResource(R.drawable.ic_like);
-                    }
-                } else {
-                    imageViewLike.setImageResource(R.drawable.ic_like);
+    @Override
+    public void onEditComment(Comment comment, int position) {
+        action = ACTION_COMMENT_EDIT;
+        currentCommnet = comment;
+        currentCommentPosition = position;
+        editTextComment.requestFocus();
+        editTextComment.setText(comment.getContent());
+        editTextComment.setSelection(editTextComment.getText().toString().length());
+        textViewAction.setText(R.string.action_edit);
+        inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    @Override
+    public void onReportComment(Comment comment) {
+        action = ACTION_COMMENT_REPORT;
+        currentCommnet = comment;
+        editTextComment.requestFocus();
+        textViewAction.setText(R.string.action_report);
+        inputMethodManager.showSoftInput(editTextComment, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    @Override
+    public void onClickReply(Comment comment, int position) {
+        Intent intent = new Intent(this, FeedbackCommentActivity.class);
+        intent.putExtra(AppConfig.COMMENT, comment);
+        intent.putExtra(AppConfig.POST, article);
+        intent.putExtra(AppConfig.COMMENT_POSITION, position);
+        startActivityForResult(intent, AppConfig.REQUEST_CODE_FEEDBACK);
+    }
+
+    class SendRequestAsyncTask extends AsyncTask<Comment, Void, Response> {
+        Comment comment = null;
+
+        @Override
+        protected Response doInBackground(Comment... comments) {
+            comment = comments[0];
+            if (comment != null) {
+                switch (action) {
+                    case ACTION_COMMENT_INSERT:
+                        return apiFunction.insertComment(comment);
+                    case ACTION_COMMENT_EDIT:
+                        return apiFunction.updateComment(comment);
+                    case ACTION_COMMENT_REPORT:
+                        ReportComment reportComment = new ReportComment(comment.getCommentID(), currentCommnet.getCommentID(), comment.getContent()
+                                , comment.getDateCreate(), comment.getUserID());
+                        return apiFunction.reportComment(reportComment);
                 }
             }
+            return null;
+        }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
+        @Override
+        protected void onPostExecute(Response response) {
+            super.onPostExecute(response);
+            String tempAction = "";
+            String result = "";
+            switch (action) {
+                case ACTION_COMMENT_INSERT:
+                    tempAction = "Bình luận ";
+                    break;
+                case ACTION_COMMENT_EDIT:
+                    tempAction = "Chỉnh sửa bình luận ";
+                    break;
+                case ACTION_COMMENT_REPORT:
+                    tempAction = "Tố cáo bình luận ";
+                    break;
             }
-        });*/
+            if (response == null || !response.isSuccess()) {
+                result = "không thành công";
+            } else {
+                switch (action) {
+                    case ACTION_COMMENT_INSERT:
+                        postDetailAdapter.addComment(comment);
+                        break;
+                    case ACTION_COMMENT_EDIT:
+                        postDetailAdapter.updateComment(comment, currentCommentPosition);
+                        break;
+                    case ACTION_COMMENT_REPORT:
+                        break;
+                }
+                result = "thành công";
+            }
+            clearAction();
+            Toast.makeText(PostDetailActivity.this, tempAction + result, Toast.LENGTH_SHORT).show();
+        }
+    }
 
+    private void checkLiked(final ImageView imageViewLike) {
+        if (isLogin) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), "1")) {
+                imageViewLike.setImageResource(R.drawable.ic_liked);
+            } else {
+                imageViewLike.setImageResource(R.drawable.ic_like);
+            }
+        } else {
+            imageViewLike.setImageResource(R.drawable.ic_like);
+        }
     }
 
     private void onClickLikePost(final ImageView imageViewLike) {
-        /*if(appPreferences.isLogin()) {
-            //get from user_post
-            if (post.getUserLikeIds() != null && post.getUserLikeIds().size() > 0) {
-                String userId = appPreferences.getUserId();
-                //if user liked this post
-                if (post.getUserLikeIds().contains(userId)) {
-                    int index = post.getUserLikeIds().indexOf(userId);
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).child(String.valueOf(index)).removeValue();
+        if (isLogin) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), "1")) {
+                Response response = apiFunction.deleteLikeArticle(new Article_UserModel(article.getArticleID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).child(String.valueOf(post.getUserLikeIds().size())).setValue(String.valueOf(userId));
-                    imageViewLike.startAnimation(animlike);
+                    Log.d(TAG, "deleteLikeArticle: false");
                 }
             } else {
-                String userId = appPreferences.getUserId();
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                        .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).child("0").setValue(String.valueOf(userId));
-                imageViewLike.startAnimation(animlike);
+                Response response = apiFunction.insertLikeArticle(new Article_UserModel(article.getArticleID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    imageViewLike.startAnimation(animlike);
+                    imageViewLike.setImageResource(R.drawable.ic_liked);
+                } else {
+                    Log.d(TAG, "insertLikeArticle: false");
+                }
             }
+        } else {
+            //show dialog login
         }
-        else {
-            Intent intentLogin = new Intent(this,Login.class);
-            startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }*/
     }
 
     private void onClickBookMark() {
-        /*if(appPreferences.isLogin()) {
+        if (isLogin) {
             progressDialog.show();
-            databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(appPreferences.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    final List<String> listBookmark = new ArrayList<String>();
-                    //have not been save bookmark
-                    if (dataSnapshot.getValue() != null) {
-                        for (DataSnapshot dataBookmark : dataSnapshot.getChildren()) {
-                            listBookmark.add(dataBookmark.getValue().toString());
-                        }
-                        if (listBookmark.contains(post.getPostId())) {
-                            listBookmark.remove(post.getPostId());
-                            databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(appPreferences.getUserId()).setValue(listBookmark).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    Toast.makeText(PostDetailActivity.this, getString(R.string.removebookmark), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        } else {
-                            listBookmark.add(post.getPostId());
-                            databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(appPreferences.getUserId()).setValue(listBookmark).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    CustomSnackbar customSnackbar = CustomSnackbar.make(linearLayoutBookmark, 1);
-                                    customSnackbar.setDuration(CustomSnackbar.LENGTH_LONG);
-                                    customSnackbar.setText(getString(R.string.savebookmark));
-                                    customSnackbar.setAction("Xem " + getString(R.string.action_bookmarks), new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            GlobalFunction.onClickViewBookMark(PostDetailActivity.this, progressDialog);
-                                        }
-                                    });
-                                    customSnackbar.show();
-                                }
-                            });
-                        }
-                    } else {
-                        listBookmark.add(post.getPostId());
-                        databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(appPreferences.getUserId()).setValue(listBookmark).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                CustomSnackbar customSnackbar = CustomSnackbar.make(linearLayoutBookmark, 1);
-                                customSnackbar.setDuration(CustomSnackbar.LENGTH_LONG);
-                                customSnackbar.setText(getString(R.string.savebookmark));
-                                customSnackbar.setAction("Xem " + getString(R.string.action_bookmarks), new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        GlobalFunction.onClickViewBookMark(PostDetailActivity.this, progressDialog);
-                                    }
-                                });
-                                customSnackbar.show();
-                            }
-                        });
-                    }
-                    if (BookMarkActivity.listPost != null) {
-                        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                BookMarkActivity.listPost = new ArrayList<Post>();
-                                for (String pId : listBookmark) {
-                                    BookMarkActivity.listPost.add(dataSnapshot.child(pId).getValue(Post.class));
-                                }
-                                if (BookMarkActivity.postsOnRequestAdapter != null)
-                                    BookMarkActivity.postsOnRequestAdapter.setData(BookMarkActivity.listPost);
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
+            if (apiFunction.checkBoorkmark(article.getArticleID(), "1")) {
+                Response response = apiFunction.deleteBookmark(new Article_UserModel(article.getArticleID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    Toast.makeText(PostDetailActivity.this, getString(R.string.removebookmark), Toast.LENGTH_SHORT).show();
+                    imageViewBookmark.setImageResource(R.drawable.ic_favorite_normal);
+                    progressDialog.dismiss();
+                } else {
+                    Log.d(TAG, "deleteBookmark: false");
                     progressDialog.dismiss();
                 }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
+            } else {
+                Response response = apiFunction.insertBookmark(new Article_UserModel(article.getArticleID(), "1"));
+                if (response != null && response.getMessage().contains("complete")) {
+                    imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
+                    progressDialog.dismiss();
+                    CustomSnackbar customSnackbar = CustomSnackbar.make(linearLayoutBookmark, 1);
+                    customSnackbar.setDuration(CustomSnackbar.LENGTH_LONG);
+                    customSnackbar.setText(getString(R.string.savebookmark));
+                    customSnackbar.setAction("Xem " + getString(R.string.action_bookmarks), new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            progressDialog.show();
+                            Intent intent = new Intent(PostDetailActivity.this, BookMarkActivity.class);
+                            intent.putExtra(AppConfig.BARNAME, AppConfig.FIREBASE_FIELD_BOOKMARKS);
+                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) apiFunction.getListBookmarkByUser("1"));
+                            intent.putExtra(AppConfig.ACTION, AppConfig.FIREBASE_FIELD_BOOKMARKS);
+                            startActivity(intent);
+                            progressDialog.dismiss();
+                        }
+                    });
+                    customSnackbar.show();
+                } else {
+                    Log.d(TAG, "insertBookmark: false");
+                    progressDialog.dismiss();
                 }
-            });
+            }
+        } else {
+            //show dialog login
         }
-        else{
-            Intent intentLogin = new Intent(this,Login.class);
-            startActivityForResult(intentLogin,AppConfig.REQUEST_CODE_LOGIN);
-        }*/
     }
 
 
@@ -488,7 +521,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     protected void onStart() {
         super.onStart();
         checkAction();
-        FloatingActionButton fab =  findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -501,7 +534,6 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mSocket.disconnect();
         NetworkChangeReceiver.unregister(this);
         unregisterUpdateNetworkReciver();
     }
@@ -523,13 +555,28 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        /*if (data == null) {
+        Log.d(TAG, "onActivityResult: requestCode "+requestCode);
+        Log.d(TAG, "onActivityResult: resultCode "+resultCode);
+        if (data == null) {
             return;
         }
+        if (requestCode == AppConfig.REQUEST_CODE_FEEDBACK && resultCode == AppConfig.RESULT_CODE_FEEDBACK) {
+            Log.d(TAG, "onActivityResult: 1");
+            Comment commentUpdate = (Comment) data.getSerializableExtra(AppConfig.COMMENT);
+            Log.d(TAG, "commentUpdate: "+commentUpdate.getCommentID());
+            Log.d(TAG, "DATA_CHANGE: "+data.getBooleanExtra(AppConfig.DATA_CHANGE,false));
+            Log.d(TAG, "COMMENT_POSITION: "+data.getIntExtra(AppConfig.COMMENT_POSITION, -1));
 
-        if (requestCode == AppConfig.REQUEST_CODE_LOGIN && resultCode == AppConfig.RESULT_CODE_LOGIN) {
-            postDetailAdapter.notifyDataSetChanged();
-        }*/
+            if (data.getBooleanExtra(AppConfig.DATA_CHANGE, false)
+                    && commentUpdate != null) {
+                Log.d(TAG, "onActivityResult: 2");
+                int positionUpdate = data.getIntExtra(AppConfig.COMMENT_POSITION, -1);
+                if (positionUpdate != -1) {
+                    Log.d(TAG, "onActivityResult: 3");
+                    postDetailAdapter.updateComment(commentUpdate,positionUpdate);
+                }
+            }
+        }
     }
 
 
@@ -538,14 +585,6 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         Log.d("PostDetailActivity", "handleGetPost: " + String.valueOf(args));
     }
 
-    private void initSocket() {
-        mSocket.connect();
-        mSocket.on(SERVER_SEND_GETPOST, onGetPost);
-    }
-
-    private void addEvent() {
-        mSocket.emit(CLIENT_SEND_GETPOST, 1);
-    }
 
     private void registerUpdateNetworkReciver() {
         try {
@@ -556,7 +595,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 public void onReceive(Context context, Intent intent) {
                     if (intent != null) {
                         boolean isNetworkAvailable = intent.getBooleanExtra(AppConfig.BROADCAST_NETWORK_AVAILABLE, true);
-                        updateNetWork(isNetworkAvailable);
+                        updateNetwork(isNetworkAvailable);
                     }
                 }
             };
@@ -580,8 +619,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    private void updateNetWork(boolean isAvailable) {
+    private void updateNetwork(boolean isAvailable) {
         updateStatus(isAvailable);
         updateAdmobNetwork(isAvailable);
+        isConnectNetwork = isAvailable;
     }
+
+
 }
