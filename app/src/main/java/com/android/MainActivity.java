@@ -42,7 +42,6 @@ import com.android.Interface.IOnClickFilter;
 import com.android.Models.Article;
 import com.android.Models.Category;
 import com.android.Models.Post;
-import com.android.Models.UserMember;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -179,39 +178,12 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
     }
 
-    private void loadCurrentUser() {
-        if (appPreferences.isLogin()) {
-            AppPreferences appPreferences = AppPreferences.getInstance(this);
-            if (appPreferences.isLogin()) {
-                if (appPreferences.isLoginWithGoogle()) {
-
-                } else {
-
-                }
-
-                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                databaseReference.child(AppConfig.FIREBASE_FIELD_USERMEMBERS).child(appPreferences.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        UserMember currentUser = dataSnapshot.getValue(UserMember.class);
-                        GlobalStaticData.setCurrentUser(currentUser);
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-            }
-        }
-    }
-
     private void logout() {
         if (appPreferences.isLoginWithGoogle()) {
             FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
             firebaseAuth.signOut();
         }
-        appPreferences.setUserId("");
+        //appPreferences.setUserId("");
         Toast.makeText(MainActivity.this, "Đã đăng xuất tài khoản!", Toast.LENGTH_SHORT).show();
         appPreferences.setLogin(false);
 
@@ -445,7 +417,6 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
                     hot_fragment.smoothScrollToTop();
             }
         });
-        loadCurrentUser();
     }
 
     @Override

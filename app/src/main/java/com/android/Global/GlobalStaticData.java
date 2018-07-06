@@ -4,6 +4,7 @@ import android.webkit.WebSettings;
 
 import com.android.Models.Post;
 import com.android.Models.Tag;
+import com.android.Models.User;
 import com.android.Models.UserMember;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.Map;
 public class GlobalStaticData {
     static int currentPage=0;
     public static String URL_HOST = "http://192.168.1.111:3000/";
-    public static UserMember currentUser  = new UserMember("asdasd", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "asdasdsad", "-KyUeplvVdI5vI4ghU01");;
+    public static User currentUser  = null;
     public static List<Post> listPostOnReQuest = new ArrayList<>();
     public static List<Post> listPostOnReQuest_Tag = new ArrayList<>();
     public static List<Post> listPostHome = new ArrayList<>();
@@ -42,13 +43,11 @@ public class GlobalStaticData {
         GlobalStaticData.currentPage = currentPage;
     }
 
-    public static UserMember getCurrentUser() {
+    public static User getCurrentUser() {
         return currentUser;
     }
 
-    public static void setCurrentUser(UserMember currentUser) {
+    public static void setCurrentUser(User currentUser) {
         GlobalStaticData.currentUser = currentUser;
     }
-
-
 }

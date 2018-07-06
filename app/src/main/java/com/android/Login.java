@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalStaticData;
+import com.android.Models.User;
 import com.android.Models.UserMember;
 import com.android.RetrofitServices.Models_R.Api_Utils;
 import com.android.RetrofitServices.Models_R.ResponeServices;
@@ -213,7 +214,7 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
                 });
                 Toast.makeText(this, "Login Success2", Toast.LENGTH_SHORT).show();
             }*/
-            appPreferences.setUserId(result.getSignInAccount().getId());
+            //appPreferences.setUserId(result.getSignInAccount().getId());
             appPreferences.setLogin(true);
             appPreferences.setLoginWithGoogle(true);
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
@@ -266,8 +267,8 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
 
                             appPreferences.setLogin(true);
                             appPreferences.setLoginWithGoogle(false);
-                            appPreferences.setUserId(dataPost.getKey());
-                            sendLoginResult(dataPost.getValue(UserMember.class));
+                            //appPreferences.setUserId(dataPost.getKey());
+                            //sendLoginResult(dataPost.getValue(UserMember.class));
                             progressDialog.dismiss();
                             fSuccess=true;
                         }
@@ -289,7 +290,7 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
         });
     }
 
-    private void sendLoginResult(UserMember user){
+    private void sendLoginResult(User user){
         GlobalStaticData.setCurrentUser(user);
         Intent intent = new Intent();
         intent.putExtra(AppConfig.USER,user);

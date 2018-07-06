@@ -107,8 +107,6 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     BroadcastReceiver updateNetworkReciver;
     private AdView mAdView;
 
-    boolean isLogin = true;
-
     //edit comment
     String action = ACTION_COMMENT_INSERT;
     Comment currentCommnet = null;
@@ -231,8 +229,8 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
 
         checkLiked(imageViewLike);
 
-        if (isLogin) {
-            if (apiFunction.checkBoorkmark(article.getArticleID(), "1")) {
+        if (GlobalStaticData.getCurrentUser() != null) {
+            if (apiFunction.checkBoorkmark(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
                 imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
             }
         }
@@ -297,7 +295,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 break;
             case R.id.linearLayoutSend:
                 inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                if (isLogin) {
+                if (GlobalStaticData.getCurrentUser()!=null) {
                     if (isConnectNetwork) {
                         long time = new java.util.Date().getTime();
                         String commentID = Long.toString(time);
@@ -309,7 +307,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                             if (action.equals(ACTION_COMMENT_INSERT)) {
                                 Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        "1", article.getArticleID());
+                                        GlobalStaticData.getCurrentUser().getUserID(), article.getArticleID());
                                 new SendRequestAsyncTask().execute(comment);
                             } else if (action.equals(ACTION_COMMENT_EDIT)) {
                                 currentCommnet.setContent(content);
@@ -317,7 +315,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                             } else if (action.equals(ACTION_COMMENT_REPORT)) {
                                 Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        "1", article.getArticleID());
+                                        GlobalStaticData.getCurrentUser().getUserID(), article.getArticleID());
                                 new SendRequestAsyncTask().execute(comment);
                             }
                         }
@@ -325,7 +323,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                         Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    //show dialog login
+                    startActivity(new Intent(this,LoginDialogActivity.class));
                 }
                 break;
             case R.id.linearLayoutClear:
@@ -431,8 +429,8 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void checkLiked(final ImageView imageViewLike) {
-        if (isLogin) {
-            if (apiFunction.checkLikeArticle(article.getArticleID(), "1")) {
+        if (GlobalStaticData.getCurrentUser()!=null) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
                 imageViewLike.setImageResource(R.drawable.ic_liked);
             } else {
                 imageViewLike.setImageResource(R.drawable.ic_like);
@@ -443,16 +441,16 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void onClickLikePost(final ImageView imageViewLike) {
-        if (isLogin) {
-            if (apiFunction.checkLikeArticle(article.getArticleID(), "1")) {
-                Response response = apiFunction.deleteLikeArticle(new Article_UserModel(article.getArticleID(), "1"));
+        if (GlobalStaticData.getCurrentUser()!=null) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
+                Response response = apiFunction.deleteLikeArticle(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
                     Log.d(TAG, "deleteLikeArticle: false");
                 }
             } else {
-                Response response = apiFunction.insertLikeArticle(new Article_UserModel(article.getArticleID(), "1"));
+                Response response = apiFunction.insertLikeArticle(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.startAnimation(animlike);
                     imageViewLike.setImageResource(R.drawable.ic_liked);
@@ -461,15 +459,15 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 }
             }
         } else {
-            //show dialog login
+            startActivity(new Intent(this,LoginDialogActivity.class));
         }
     }
 
     private void onClickBookMark() {
-        if (isLogin) {
+        if (GlobalStaticData.getCurrentUser()!=null) {
             progressDialog.show();
-            if (apiFunction.checkBoorkmark(article.getArticleID(), "1")) {
-                Response response = apiFunction.deleteBookmark(new Article_UserModel(article.getArticleID(), "1"));
+            if (apiFunction.checkBoorkmark(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
+                Response response = apiFunction.deleteBookmark(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     Toast.makeText(PostDetailActivity.this, getString(R.string.removebookmark), Toast.LENGTH_SHORT).show();
                     imageViewBookmark.setImageResource(R.drawable.ic_favorite_normal);
@@ -479,7 +477,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                     progressDialog.dismiss();
                 }
             } else {
-                Response response = apiFunction.insertBookmark(new Article_UserModel(article.getArticleID(), "1"));
+                Response response = apiFunction.insertBookmark(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
                     progressDialog.dismiss();
@@ -492,7 +490,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                             progressDialog.show();
                             Intent intent = new Intent(PostDetailActivity.this, BookMarkActivity.class);
                             intent.putExtra(AppConfig.BARNAME, AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) apiFunction.getListBookmarkByUser("1"));
+                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) apiFunction.getListBookmarkByUser(GlobalStaticData.getCurrentUser().getUserID()));
                             intent.putExtra(AppConfig.ACTION, AppConfig.FIREBASE_FIELD_BOOKMARKS);
                             startActivity(intent);
                             progressDialog.dismiss();
@@ -505,7 +503,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 }
             }
         } else {
-            //show dialog login
+            startActivity(new Intent(this,LoginDialogActivity.class));
         }
     }
 
@@ -555,17 +553,17 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: requestCode "+requestCode);
-        Log.d(TAG, "onActivityResult: resultCode "+resultCode);
+        Log.d(TAG, "onActivityResult: requestCode " + requestCode);
+        Log.d(TAG, "onActivityResult: resultCode " + resultCode);
         if (data == null) {
             return;
         }
         if (requestCode == AppConfig.REQUEST_CODE_FEEDBACK && resultCode == AppConfig.RESULT_CODE_FEEDBACK) {
             Log.d(TAG, "onActivityResult: 1");
             Comment commentUpdate = (Comment) data.getSerializableExtra(AppConfig.COMMENT);
-            Log.d(TAG, "commentUpdate: "+commentUpdate.getCommentID());
-            Log.d(TAG, "DATA_CHANGE: "+data.getBooleanExtra(AppConfig.DATA_CHANGE,false));
-            Log.d(TAG, "COMMENT_POSITION: "+data.getIntExtra(AppConfig.COMMENT_POSITION, -1));
+            Log.d(TAG, "commentUpdate: " + commentUpdate.getCommentID());
+            Log.d(TAG, "DATA_CHANGE: " + data.getBooleanExtra(AppConfig.DATA_CHANGE, false));
+            Log.d(TAG, "COMMENT_POSITION: " + data.getIntExtra(AppConfig.COMMENT_POSITION, -1));
 
             if (data.getBooleanExtra(AppConfig.DATA_CHANGE, false)
                     && commentUpdate != null) {
@@ -573,7 +571,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 int positionUpdate = data.getIntExtra(AppConfig.COMMENT_POSITION, -1);
                 if (positionUpdate != -1) {
                     Log.d(TAG, "onActivityResult: 3");
-                    postDetailAdapter.updateComment(commentUpdate,positionUpdate);
+                    postDetailAdapter.updateComment(commentUpdate, positionUpdate);
                 }
             }
         }

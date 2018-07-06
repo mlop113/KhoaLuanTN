@@ -3,6 +3,7 @@ package com.android.Adapters;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,8 +15,10 @@ import android.widget.Toast;
 
 import com.android.API.APIFunction;
 import com.android.API.Response;
+import com.android.Activity_Fragment.LoginDialogActivity;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
+import com.android.Global.GlobalStaticData;
 import com.android.Interface.IOnClickFeedback;
 import com.android.Models.Article;
 import com.android.Models.Comment;
@@ -107,7 +110,7 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 }
 
                 checkLiked(listComment_user,
-                        new Comment_UserModel(comment.getCommentID(), "1"), commentViewholder.textViewLike, commentViewholder.imageViewLike);
+                        new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()), commentViewholder.textViewLike, commentViewholder.imageViewLike);
 
                 commentViewholder.textViewLike.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -144,7 +147,7 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         if (GlobalFunction.isNetworkAvailable(context)) {
                             final List<CharSequence> charSequences = new ArrayList<>();
                             charSequences.add(context.getString(R.string.comment_reply));
-                            if (feedbackComment.getUserID().equals("1")) {
+                            if (feedbackComment.getUserID().equals(GlobalStaticData.getCurrentUser().getUserID())) {
                                 charSequences.add(context.getString(R.string.comment_edit));
                                 charSequences.add(context.getString(R.string.comment_delete));
                             } else {
@@ -156,12 +159,16 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int positionSelected) {
                                         Log.d(TAG, "onClick: " + positionSelected);
-                                        if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_edit))) {
-                                            feedbackCommentInterface.onEditFeedbackComment(feedbackComment, position-1);
-                                        } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_delete))) {
-                                            deleteFeedbackComment(feedbackComment, position-1);
-                                        } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_report))) {
-                                            feedbackCommentInterface.onReportFeedbackComment(feedbackComment);
+                                        if (GlobalStaticData.getCurrentUser() != null) {
+                                            if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_edit))) {
+                                                feedbackCommentInterface.onEditFeedbackComment(feedbackComment, position-1);
+                                            } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_delete))) {
+                                                deleteFeedbackComment(feedbackComment, position-1);
+                                            } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_report))) {
+                                                feedbackCommentInterface.onReportFeedbackComment(feedbackComment);
+                                            }
+                                        }else{
+                                            context.startActivity(new Intent(context, LoginDialogActivity.class));
                                         }
                                         dialogInterface.dismiss();
                                     }

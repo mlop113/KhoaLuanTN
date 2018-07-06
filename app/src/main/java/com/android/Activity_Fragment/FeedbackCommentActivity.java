@@ -24,6 +24,7 @@ import com.android.Adapters.FeedbackCommentAdapter;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
+import com.android.Global.GlobalStaticData;
 import com.android.Interface.IOnClickFeedback;
 import com.android.Models.Article;
 import com.android.Models.Comment;
@@ -77,7 +78,6 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     DatabaseReference databaseReference;
     AppPreferences appPreferences;
 
-    private boolean isLogin = true;
     private APIFunction apiFunction;
 
     //edit comment
@@ -156,7 +156,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                 break;
             case R.id.linearLayoutSend:
                 inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                if (isLogin) {
+                if (GlobalStaticData.getCurrentUser()!=null) {
                     if (GlobalFunction.isNetworkAvailable(this)) {
                         long time = new java.util.Date().getTime();
                         String feedbackID = Long.toString(time);
@@ -178,7 +178,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                                 FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
                                         , content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        "1");
+                                        GlobalStaticData.getCurrentUser().getUserID());
                                 new SendRequestAsyncTask().execute(feedbackComment);
                             } else if (action.equals(ACTION_COMMENT_EDIT)) {
                                 currentFeedbackComment.setContent(content);
@@ -187,7 +187,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                                 FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
                                         , content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        "1");
+                                        GlobalStaticData.getCurrentUser().getUserID());
                                 new SendRequestAsyncTask().execute(feedbackComment);
                             }
                         }
@@ -195,7 +195,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                         Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    //show dialog login
+                    startActivity(new Intent(this,LoginDialogActivity.class));
                 }
                 break;
             case R.id.linearLayoutClear:
@@ -337,8 +337,8 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     private void checkLiked() {
-        if (isLogin) {
-            if (apiFunction.checkLikeComment(comment.getCommentID(), "1")) {
+        if (GlobalStaticData.getCurrentUser()!=null) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID())) {
                 imageViewLike.setImageResource(R.drawable.ic_liked);
             } else {
                 imageViewLike.setImageResource(R.drawable.ic_like);
@@ -349,16 +349,16 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     private void onClickLikeComment() {
-        if (isLogin) {
-            if (apiFunction.checkLikeComment(comment.getCommentID(), "1")) {
-                Response response = apiFunction.deleteLikeComment(new Comment_UserModel(comment.getCommentID(), "1"));
+        if (GlobalStaticData.getCurrentUser()!=null) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID())) {
+                Response response = apiFunction.deleteLikeComment(new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
                     Log.d(TAG, "deleteLikeComment: false");
                 }
             } else {
-                Response response = apiFunction.insertLikeComment(new Comment_UserModel(comment.getCommentID(), "1"));
+                Response response = apiFunction.insertLikeComment(new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.startAnimation(animlike);
                     imageViewLike.setImageResource(R.drawable.ic_liked);
@@ -370,7 +370,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                 feedbackCommentAdapter.notifyItemChanged(0);
             }
         } else {
-            //show dialog login
+            startActivity(new Intent(this,LoginDialogActivity.class));
         }
     }
 

@@ -1,23 +1,15 @@
 package com.android.Global;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
-import com.android.Activity_Fragment.BookMarkActivity;
-import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Models.Post;
-import com.android.Models.User;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,8 +24,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import dmax.dialog.SpotsDialog;
 
 /**
  * Created by Ngoc Vu on 12/18/2017.
@@ -234,79 +224,6 @@ public class GlobalFunction {
         return listPost;
     }*/
 
-    public static void onClickViewBookMark(final Activity activity, final SpotsDialog progressDialog){
-        progressDialog.show();
-        GlobalStaticData.listPostOnReQuest= new ArrayList<>();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.hasChild(GlobalStaticData.currentUser.getUserId()))
-                {
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_BOOKMARKS).child(GlobalStaticData.currentUser.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(final DataSnapshot dataSnapshot) {
-                            int i = 0;
-                            final int count = (int) dataSnapshot.getChildrenCount();
-                            for(DataSnapshot dataBookmark:dataSnapshot.getChildren()){
-                                i++;
-
-                                GlobalStaticData.listBookmark.add(dataBookmark.getValue().toString());
-
-                                final int finalI = i;
-                                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(dataBookmark.getValue().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot2) {
-                                        GlobalStaticData.listPostOnReQuest.add(dataSnapshot2.getValue(Post.class));
-                                        Log.d("bookmarks",String.valueOf(dataSnapshot2.getKey()));
-                                        if(finalI ==count) {
-                                            Intent intent = new Intent(activity,BookMarkActivity.class);
-                                            intent.putExtra(AppConfig.BARNAME, AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) GlobalStaticData.listPostOnReQuest);
-                                            intent.putExtra(AppConfig.ACTION,AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                                            activity.startActivity(intent);
-                                            progressDialog.dismiss();
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
-
-                                    }
-                                });
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-                else
-                {
-                    Intent intent = new Intent(activity,PostsOnRequestActivity.class);
-                    intent.putExtra(AppConfig.BARNAME, AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                    GlobalStaticData.listPostOnReQuest = new ArrayList<Post>();
-                    intent.putExtra(AppConfig.LISTPOST, (ArrayList) GlobalStaticData.listPostOnReQuest);
-                    intent.putExtra(AppConfig.ACTION,AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                    activity.startActivity(intent);
-                    progressDialog.dismiss();
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
-
-    public static User getCurrentUser(){
-        User currentUser = null;
-        return currentUser;
-    }
 
     public static boolean isNetworkAvailable2(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService( context.CONNECTIVITY_SERVICE );

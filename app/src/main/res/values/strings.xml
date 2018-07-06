@@ -18,8 +18,10 @@
     <string name="quicksearch">Tìm nhanh</string>
     <string name="categoryname">Chuyên mục</string>
     <string name="taghot">Hot</string>
-    <string name="facebook_app_id">767879083418219</string>
-    <string name="fb_login_protocol_scheme">fb767879083418219</string>
+    <!--<string name="facebook_app_id">767879083418219</string>-->
+    <!--<string name="fb_login_protocol_scheme">fb767879083418219</string>-->
+    <string name="facebook_app_id">472159863249180</string>
+    <string name="fb_login_protocol_scheme">fb472159863249180</string>
     <string name="tagNew">New</string>
     <string name="waitlogin">Logining</string>
     <string name="savebookmark">Đã lưu bài viết</string>
