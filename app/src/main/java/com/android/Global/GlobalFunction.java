@@ -7,7 +7,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
-import com.android.Models.Post;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -19,10 +18,8 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -72,166 +69,14 @@ public class GlobalFunction {
         return  String.valueOf(minute) +" phút trước";
     }
 
-    public static List<Post> getFilterListPostByDate(List<Post> listPost, String date){
-        List<Post> listPostResult = new ArrayList<>();
-        DateFormat timeFormat= SimpleDateFormat.getDateTimeInstance();
-        Date dateFilter=new Date();
-        Date datePost = new Date();
-        try {
-            dateFilter = timeFormat.parse(date);
-            Log.d("dateFilter",dateFilter.toString());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        for (Post p:listPost) {
-            try {
-                datePost = timeFormat.parse(p.getDateCreate());
-                Log.d("datePost",datePost.toString());
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            long distance = (datePost.getTime()-dateFilter.getTime());
-            Log.d("distance",String.valueOf(distance));
-            if(distance>=0)
-                listPostResult.add(p);
-        }
-        return  listPostResult;
-    }
 
-    public static boolean filter( Post p, String date){
-        DateFormat timeFormat= SimpleDateFormat.getDateTimeInstance();
-        Date dateFilter=new Date();
-        Date datePost = new Date();
-        try {
-            dateFilter = timeFormat.parse(date);
-            Log.d("dateFilter",dateFilter.toString());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        try {
-            datePost = timeFormat.parse(p.getDateCreate());
-            Log.d("datePost",datePost.toString());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        long distance = (datePost.getTime()-dateFilter.getTime());
-        Log.d("distance",String.valueOf(distance));
-        if(distance>=0)
-            return  true;
-
-        return  false;
-    }
-
-    //function get list post by all
-    /*public static List<Post> getListPost() {
-        final List<Post> list = new ArrayList<>();
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot child:dataSnapshot.getChildren()){
-                    Post post =child.getValue(Post.class);
-                    list.add(post);
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-            }
-        });
-        return list;
-    }
-
-    public static List<Tag> getListTag(){
-        final List<Tag> list = new ArrayList<>();
-        DatabaseReference  databaseReference = FirebaseDatabase.getInstance().getReference();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_TAGS).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot child:dataSnapshot.getChildren()){
-                    Tag tag =child.getValue(Tag.class);
-                    list.add(tag);
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-            }
-        });
-        return list;
-    }
-
-    public static List<Post> getListPostByTagName(String tagName){
-        List<Post> listPost = new ArrayList<>();
-        for (Post p:GlobalStaticData.getListPost()) {
-            if(p.getTags().contains(tagName))
-                listPost.add(p);
-        }
-        return listPost;
-    }
-
-    public static List<Category> getlistCategory(){
-        final List<Category> list = new ArrayList<>();
-        DatabaseReference  databaseReference = FirebaseDatabase.getInstance().getReference();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_CATEGORIES).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot child:dataSnapshot.getChildren()){
-                    Category category =child.getValue(Category.class);
-                    list.add(category);
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-            }
-        });
-        return list;
-    }
-
-    public static UserMember LoginByPhoneNumber(String phonenumber, String password){
-        UserMember user=null;
-        return  user;
-    }
-
-    public static List<Post> getListPostByCategoryId(String categoryId){
-        List<Post> listPost = new ArrayList<>();
-
-        for (Post p:GlobalStaticData.getListPost()) {
-                if(p.getCategoryId().equals(categoryId))
-                    listPost.add(p);
-        }
-        return  listPost;
-    }
-
-    public static Category getCategoryById(String categoryId)
-    {
-
-        return null;
-    }
-
-
-
-    public static ArrayList<PostModel> ListBookmark = new ArrayList<>();
-
-    public static ArrayList<PostModel> getListBookmark() {
-        return ListBookmark;
-    }
-
-    public static void setListBookmark(ArrayList<PostModel> listBookmark) {
-        ListBookmark = listBookmark;
-    }
-
-    public static ArrayList<PostModel> getListBookmarkByUserId(String userId){
-        ArrayList<PostModel> listPost = new ArrayList<>();
-        return listPost;
-    }*/
-
-
-    public static boolean isNetworkAvailable2(Context context) {
+    public static boolean isNetworkAvailable(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService( context.CONNECTIVITY_SERVICE );
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public static boolean isNetworkAvailable(Context context) {
+    public static boolean isNetworkAvailable2(Context context) {
         if (isNetworkAvailable2(context)) {
             try {
                 HttpURLConnection urlc = (HttpURLConnection) (new URL(GlobalStaticData.URL_HOST).openConnection());

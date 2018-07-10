@@ -18,7 +18,6 @@ import com.android.API.Response;
 import com.android.Activity_Fragment.LoginDialogActivity;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
-import com.android.Global.GlobalStaticData;
 import com.android.Interface.IOnClickFeedback;
 import com.android.Models.Article;
 import com.android.Models.Comment;
@@ -27,6 +26,8 @@ import com.android.Models.FeedbackComment;
 import com.android.Models.User;
 import com.android.R;
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,9 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     AppPreferences appPreferences;
     APIFunction apiFunction;
 
+    FirebaseAuth firebaseAuth;
+    FirebaseUser firebaseUser;
+
     private FeedbackCommentInterface feedbackCommentInterface;
 
     public FeedbackCommentAdapter(Context context, Article article, Comment comment) {
@@ -57,6 +61,8 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         this.listFeedback = new ArrayList<>();
         this.listFeedback = apiFunction.getListFeedback_byCommentID(comment.getCommentID());
         appPreferences = AppPreferences.getInstance(context);
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseUser = firebaseAuth.getCurrentUser();
         try {
             feedbackCommentInterface = (FeedbackCommentInterface) context;
         } catch (ClassCastException e) {
@@ -110,7 +116,7 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 }
 
                 checkLiked(listComment_user,
-                        new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()), commentViewholder.textViewLike, commentViewholder.imageViewLike);
+                        new Comment_UserModel(comment.getCommentID(), firebaseAuth.getCurrentUser() == null ? null : firebaseAuth.getCurrentUser().getUid()), commentViewholder.textViewLike, commentViewholder.imageViewLike);
 
                 commentViewholder.textViewLike.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -147,7 +153,7 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         if (GlobalFunction.isNetworkAvailable(context)) {
                             final List<CharSequence> charSequences = new ArrayList<>();
                             charSequences.add(context.getString(R.string.comment_reply));
-                            if (feedbackComment.getUserID().equals(GlobalStaticData.getCurrentUser().getUserID())) {
+                            if (firebaseAuth.getCurrentUser() != null && feedbackComment.getUserID().equals(firebaseUser.getUid())) {
                                 charSequences.add(context.getString(R.string.comment_edit));
                                 charSequences.add(context.getString(R.string.comment_delete));
                             } else {
@@ -159,15 +165,15 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int positionSelected) {
                                         Log.d(TAG, "onClick: " + positionSelected);
-                                        if (GlobalStaticData.getCurrentUser() != null) {
+                                        if (firebaseAuth.getCurrentUser() != null) {
                                             if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_edit))) {
-                                                feedbackCommentInterface.onEditFeedbackComment(feedbackComment, position-1);
+                                                feedbackCommentInterface.onEditFeedbackComment(feedbackComment, position - 1);
                                             } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_delete))) {
-                                                deleteFeedbackComment(feedbackComment, position-1);
+                                                deleteFeedbackComment(feedbackComment, position - 1);
                                             } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_report))) {
                                                 feedbackCommentInterface.onReportFeedbackComment(feedbackComment);
                                             }
-                                        }else{
+                                        } else {
                                             context.startActivity(new Intent(context, LoginDialogActivity.class));
                                         }
                                         dialogInterface.dismiss();
@@ -207,20 +213,20 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                             Log.d(TAG, "deleteComment: khong the delete");
                         }
                         listFeedback.remove(position);
-                        notifyItemRemoved(position+1);
+                        notifyItemRemoved(position + 1);
                         dialog.dismiss();
                     }
                 }).show();
     }
 
     public void addFeedbackComment(FeedbackComment feedbackComment) {
-        listFeedback.add(0,feedbackComment);
+        listFeedback.add(0, feedbackComment);
         notifyItemInserted(0);
     }
 
     public void updateFeedbackComment(FeedbackComment feedbackComment, int position) {
         this.listFeedback.set(position, feedbackComment);
-        notifyItemChanged(position+1);
+        notifyItemChanged(position + 1);
     }
 
 
@@ -240,7 +246,7 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private void checkLiked(final List<Comment_UserModel> listComment_user, Comment_UserModel comment_user, TextView textViewLike, ImageView imageViewLike) {
         if (listComment_user != null && listComment_user.size() > 0) {
             imageViewLike.setVisibility(View.VISIBLE);
-            if (apiFunction.checkLikeComment(comment_user.getCommentID(), comment_user.getUserID())) {
+            if (comment_user.getUserID() != null && apiFunction.checkLikeComment(comment_user.getCommentID(), comment_user.getUserID())) {
                 textViewLike.setText(R.string.unlike);
             } else {
                 textViewLike.setText(R.string.like);

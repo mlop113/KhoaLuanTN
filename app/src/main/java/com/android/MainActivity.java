@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
@@ -16,12 +17,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.widgets.WheelDayPicker;
 import com.aigestudio.wheelpicker.widgets.WheelMonthPicker;
@@ -30,6 +31,7 @@ import com.android.API.APIFunction;
 import com.android.Activity_Fragment.Hot_Fragment;
 import com.android.Activity_Fragment.LoginDialogActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
+import com.android.Activity_Fragment.Profile_Activity;
 import com.android.Adapters.CategoryAdapter;
 import com.android.Adapters.MyFragmentPagerAdapter;
 import com.android.BroadcastReceiver.NetworkChangeReceiver;
@@ -41,13 +43,12 @@ import com.android.Interface.IOnClickCategory;
 import com.android.Interface.IOnClickFilter;
 import com.android.Models.Article;
 import com.android.Models.Category;
-import com.android.Models.Post;
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.joooonho.SelectableRoundedImageView;
 
 import org.droidparts.widget.ClearableEditText;
 
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     AppPreferences appPreferences;
     InputMethodManager inputMethodManager;
     //actionbar
-    ImageButton imageButtonPlus;
+    SelectableRoundedImageView imageButtonPlus;
     DrawerLayout drawer;
     //drawer and listCategory
     private RecyclerView recyclerViewCategory;
@@ -107,6 +108,8 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
 
     APIFunction apiFunction;
     BroadcastReceiver updateNetworkReciver;
+    FirebaseAuth firebaseAuth;
+    FirebaseUser firebaseUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +120,8 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         appPreferences = AppPreferences.getInstance(this);
         //connect firebase
         //fireBase();
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseUser = firebaseAuth.getCurrentUser();
         databaseReference = FirebaseDatabase.getInstance().getReference();
         setContentView(R.layout.activity_main);
         inputMethodManager = (InputMethodManager) getSystemService(this.INPUT_METHOD_SERVICE);
@@ -176,9 +181,19 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         recyclerViewCategory.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewCategory.setAdapter(categoryAdapter);
         progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
+        editTextSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    searchPost(editTextSearch.getText().toString());
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
-    private void logout() {
+    /*private void logout() {
         if (appPreferences.isLoginWithGoogle()) {
             FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
             firebaseAuth.signOut();
@@ -188,39 +203,37 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         appPreferences.setLogin(false);
 
 
-    }
+    }*/
 
     private void searchPost(final String strSearch) {
-        final List<Post> listPostSearch = new ArrayList<>();
-        databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for (DataSnapshot dataPost : dataSnapshot.getChildren()) {
-                    if (dataPost.getValue(Post.class).getTitle().contains(strSearch))
-                        listPostSearch.add(dataPost.getValue(Post.class));
-                }
+        progressDialog.show();
+        new SearchAsyncTask().execute(strSearch);
+    }
+
+    class SearchAsyncTask extends AsyncTask<String, Void, List<Article>> {
+        String strSearch = null;
+
+        @Override
+        protected List<Article> doInBackground(String... strings) {
+            strSearch = strings[0];
+            List<Article> listSearch = new ArrayList<>();
+            if (strSearch != null) {
+                listSearch = apiFunction.searchArticle(strSearch);
+            }
+            return listSearch;
+        }
+
+        @Override
+        protected void onPostExecute(List<Article> listArticle) {
+            super.onPostExecute(listArticle);
+            if (listArticle != null) {
                 Intent intentSearch = new Intent(MainActivity.this, PostsOnRequestActivity.class);
-                intentSearch.putExtra(AppConfig.LISTPOST, (ArrayList) listPostSearch);
+                intentSearch.putExtra(AppConfig.LISTPOST, (ArrayList) listArticle);
                 intentSearch.putExtra(AppConfig.BARNAME, strSearch);
                 startActivity(intentSearch);
             }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-        /*ArrayList<Post> listPost = new ArrayList<>();
-        for(PostModel p:GlobalFunction.getListPost()){
-            if(standandString(p.getTitile().trim()).contains(standandString(strSearch)))
-            {
-                listPost.add(p);
-            }
+            progressDialog.dismiss();
         }
-        Intent intentSearch = new Intent(this,PostsOnRequestActivity.class);
-        intentSearch.putExtra(AppConfig.LISTPOST,listPost);
-        intentSearch.putExtra(AppConfig.BARNAME,strSearch);
-        startActivity(intentSearch);*/
     }
 
 
@@ -371,15 +384,34 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
 
     //tạo Diaglog ic dấu "+"
     private void initMenuplus() {
-        imageButtonPlus = (ImageButton) findViewById(R.id.imageButtonPlus);
+        imageButtonPlus = findViewById(R.id.imageButtonPlus);
         imageButtonPlus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, LoginDialogActivity.class));
-
+                if (firebaseUser == null) {
+                    startActivity(new Intent(MainActivity.this, LoginDialogActivity.class));
+                } else {
+                    if (GlobalFunction.isNetworkAvailable(MainActivity.this)) {
+                        startActivity(new Intent(MainActivity.this, Profile_Activity.class));
+                    }
+                }
             }
         });
 
+    }
+
+    private void updateUser(boolean networkAvailable) {
+        if (networkAvailable) {
+            firebaseUser = firebaseAuth.getCurrentUser();
+            if (firebaseUser != null) {
+                Glide.with(this).load(firebaseUser.getPhotoUrl()).into(imageButtonPlus);
+            } else {
+                imageButtonPlus.setImageResource(R.drawable.icon_user1);
+            }
+        } else {
+            firebaseUser = null;
+            imageButtonPlus.setImageResource(R.drawable.icon_user1);
+        }
     }
 
 
@@ -417,6 +449,12 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
                     hot_fragment.smoothScrollToTop();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUser(GlobalFunction.isNetworkAvailable(this));
     }
 
     @Override
@@ -472,6 +510,7 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         updateHomeStatus(isAvailable);
         hot_fragment.updateNetwork(isAvailable);
         updateCategoryNetwork(isAvailable);
+        updateUser(isAvailable);
     }
 
 }

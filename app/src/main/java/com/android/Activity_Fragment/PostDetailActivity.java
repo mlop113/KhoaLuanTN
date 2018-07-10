@@ -43,6 +43,8 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -111,6 +113,9 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     String action = ACTION_COMMENT_INSERT;
     Comment currentCommnet = null;
     int currentCommentPosition = -1;
+    FirebaseAuth firebaseAuth;
+    FirebaseUser firebaseUser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +128,8 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         appPreferences = AppPreferences.getInstance(this);
         //connect firebase
         //fireBase();
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseUser = firebaseAuth.getCurrentUser();
         databaseReference = FirebaseDatabase.getInstance().getReference();
 
         overridePendingTransitionEnter();
@@ -135,11 +142,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         if (intent != null) {
             article = (Article) intent.getSerializableExtra(AppConfig.POST);
             if (article == null) {
-                Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
                 finish();
             }
         } else {
-            Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
             finish();
         }
 
@@ -216,9 +223,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                postDetailAdapter.notifyDataSetChanged();
+                postDetailAdapter.reLoad();
                 swipeRefresh.setRefreshing(false);
                 updateNetwork(GlobalFunction.isNetworkAvailable(PostDetailActivity.this));
+                checkLiked(imageViewLike);
+                checkBookmark();
             }
         });
 
@@ -228,13 +237,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         recyclerViewPostDetail.setAdapter(postDetailAdapter);
 
         checkLiked(imageViewLike);
-
-        if (GlobalStaticData.getCurrentUser() != null) {
-            if (apiFunction.checkBoorkmark(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
-                imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
-            }
-        }
-
+        checkBookmark();
     }
 
     private void event() {
@@ -295,7 +298,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 break;
             case R.id.linearLayoutSend:
                 inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                if (GlobalStaticData.getCurrentUser()!=null) {
+                if (firebaseUser != null) {
                     if (isConnectNetwork) {
                         long time = new java.util.Date().getTime();
                         String commentID = Long.toString(time);
@@ -303,11 +306,11 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                         String content = editTextComment.getText().toString();
                         if (!TextUtils.isEmpty(content)) {
                             editTextComment.setText("");
-                            imageViewSend.startAnimation(animshake);
+                            imageViewSend.setAnimation(animshake);
                             if (action.equals(ACTION_COMMENT_INSERT)) {
                                 Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        GlobalStaticData.getCurrentUser().getUserID(), article.getArticleID());
+                                        firebaseUser.getUid(), article.getArticleID());
                                 new SendRequestAsyncTask().execute(comment);
                             } else if (action.equals(ACTION_COMMENT_EDIT)) {
                                 currentCommnet.setContent(content);
@@ -315,7 +318,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                             } else if (action.equals(ACTION_COMMENT_REPORT)) {
                                 Comment comment = new Comment(String.valueOf(myDate.getTime()), content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        GlobalStaticData.getCurrentUser().getUserID(), article.getArticleID());
+                                        firebaseUser.getUid(), article.getArticleID());
                                 new SendRequestAsyncTask().execute(comment);
                             }
                         }
@@ -323,7 +326,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                         Toast.makeText(this, "Không có kết nối mạng!", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    startActivity(new Intent(this,LoginDialogActivity.class));
+                    startActivityForResult(new Intent(this, LoginDialogActivity.class), AppConfig.REQUEST_CODE_LOGIN);
                 }
                 break;
             case R.id.linearLayoutClear:
@@ -429,8 +432,8 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void checkLiked(final ImageView imageViewLike) {
-        if (GlobalStaticData.getCurrentUser()!=null) {
-            if (apiFunction.checkLikeArticle(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
+        if (firebaseUser != null) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), firebaseUser.getUid())) {
                 imageViewLike.setImageResource(R.drawable.ic_liked);
             } else {
                 imageViewLike.setImageResource(R.drawable.ic_like);
@@ -440,17 +443,26 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
+    private void checkBookmark() {
+        if (firebaseUser != null) {
+            if (apiFunction.checkBoorkmark(article.getArticleID(), firebaseUser.getUid())) {
+                imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
+            }
+        }
+    }
+
+
     private void onClickLikePost(final ImageView imageViewLike) {
-        if (GlobalStaticData.getCurrentUser()!=null) {
-            if (apiFunction.checkLikeArticle(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
-                Response response = apiFunction.deleteLikeArticle(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
+        if (firebaseUser != null) {
+            if (apiFunction.checkLikeArticle(article.getArticleID(), firebaseUser.getUid())) {
+                Response response = apiFunction.deleteLikeArticle(new Article_UserModel(article.getArticleID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
                     Log.d(TAG, "deleteLikeArticle: false");
                 }
             } else {
-                Response response = apiFunction.insertLikeArticle(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
+                Response response = apiFunction.insertLikeArticle(new Article_UserModel(article.getArticleID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.startAnimation(animlike);
                     imageViewLike.setImageResource(R.drawable.ic_liked);
@@ -459,17 +471,16 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 }
             }
         } else {
-            startActivity(new Intent(this,LoginDialogActivity.class));
+            startActivityForResult(new Intent(this, LoginDialogActivity.class), AppConfig.REQUEST_CODE_LOGIN);
         }
     }
 
     private void onClickBookMark() {
-        if (GlobalStaticData.getCurrentUser()!=null) {
+        if (firebaseUser != null) {
             progressDialog.show();
-            if (apiFunction.checkBoorkmark(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID())) {
-                Response response = apiFunction.deleteBookmark(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
+            if (apiFunction.checkBoorkmark(article.getArticleID(), firebaseUser.getUid())) {
+                Response response = apiFunction.deleteBookmark(new Article_UserModel(article.getArticleID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
-                    Toast.makeText(PostDetailActivity.this, getString(R.string.removebookmark), Toast.LENGTH_SHORT).show();
                     imageViewBookmark.setImageResource(R.drawable.ic_favorite_normal);
                     progressDialog.dismiss();
                 } else {
@@ -477,7 +488,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                     progressDialog.dismiss();
                 }
             } else {
-                Response response = apiFunction.insertBookmark(new Article_UserModel(article.getArticleID(), GlobalStaticData.getCurrentUser().getUserID()));
+                Response response = apiFunction.insertBookmark(new Article_UserModel(article.getArticleID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewBookmark.setImageResource(R.drawable.ic_favorite_selected);
                     progressDialog.dismiss();
@@ -490,7 +501,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                             progressDialog.show();
                             Intent intent = new Intent(PostDetailActivity.this, BookMarkActivity.class);
                             intent.putExtra(AppConfig.BARNAME, AppConfig.FIREBASE_FIELD_BOOKMARKS);
-                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) apiFunction.getListBookmarkByUser(GlobalStaticData.getCurrentUser().getUserID()));
+                            intent.putExtra(AppConfig.LISTPOST, (ArrayList) apiFunction.getListBookmarkByUser(firebaseUser.getUid()));
                             intent.putExtra(AppConfig.ACTION, AppConfig.FIREBASE_FIELD_BOOKMARKS);
                             startActivity(intent);
                             progressDialog.dismiss();
@@ -503,7 +514,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
                 }
             }
         } else {
-            startActivity(new Intent(this,LoginDialogActivity.class));
+            startActivityForResult(new Intent(this, LoginDialogActivity.class), AppConfig.REQUEST_CODE_LOGIN);
         }
     }
 
@@ -513,6 +524,12 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         super.finish();
         inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
         overridePendingTransitionExit();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        firebaseUser = firebaseAuth.getCurrentUser();
     }
 
     @Override
@@ -558,21 +575,31 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         if (data == null) {
             return;
         }
-        if (requestCode == AppConfig.REQUEST_CODE_FEEDBACK && resultCode == AppConfig.RESULT_CODE_FEEDBACK) {
-            Log.d(TAG, "onActivityResult: 1");
-            Comment commentUpdate = (Comment) data.getSerializableExtra(AppConfig.COMMENT);
-            Log.d(TAG, "commentUpdate: " + commentUpdate.getCommentID());
-            Log.d(TAG, "DATA_CHANGE: " + data.getBooleanExtra(AppConfig.DATA_CHANGE, false));
-            Log.d(TAG, "COMMENT_POSITION: " + data.getIntExtra(AppConfig.COMMENT_POSITION, -1));
+        if (GlobalFunction.isNetworkAvailable(PostDetailActivity.this)) {
+            if (requestCode == AppConfig.REQUEST_CODE_FEEDBACK && resultCode == AppConfig.RESULT_CODE_FEEDBACK) {
+                Log.d(TAG, "onActivityResult: 1");
+                Comment commentUpdate = (Comment) data.getSerializableExtra(AppConfig.COMMENT);
+                Log.d(TAG, "commentUpdate: " + commentUpdate.getCommentID());
+                Log.d(TAG, "DATA_CHANGE: " + data.getBooleanExtra(AppConfig.DATA_CHANGE, false));
+                Log.d(TAG, "COMMENT_POSITION: " + data.getIntExtra(AppConfig.COMMENT_POSITION, -1));
 
-            if (data.getBooleanExtra(AppConfig.DATA_CHANGE, false)
-                    && commentUpdate != null) {
-                Log.d(TAG, "onActivityResult: 2");
-                int positionUpdate = data.getIntExtra(AppConfig.COMMENT_POSITION, -1);
-                if (positionUpdate != -1) {
-                    Log.d(TAG, "onActivityResult: 3");
-                    postDetailAdapter.updateComment(commentUpdate, positionUpdate);
+                if (data.getBooleanExtra(AppConfig.DATA_CHANGE, false)
+                        && commentUpdate != null) {
+                    Log.d(TAG, "onActivityResult: 2");
+                    int positionUpdate = data.getIntExtra(AppConfig.COMMENT_POSITION, -1);
+                    if (positionUpdate != -1) {
+                        Log.d(TAG, "onActivityResult: 3");
+                        postDetailAdapter.updateComment(commentUpdate, positionUpdate);
+                    }
                 }
+            }
+
+            if (resultCode == AppConfig.RESULT_CODE_LOGIN) {
+                postDetailAdapter.reLoad();
+                swipeRefresh.setRefreshing(false);
+                updateNetwork(GlobalFunction.isNetworkAvailable(PostDetailActivity.this));
+                checkLiked(imageViewLike);
+                checkBookmark();
             }
         }
     }

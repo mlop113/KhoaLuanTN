@@ -34,7 +34,8 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginTop="22dp"
                     android:layout_toStartOf="@+id/ic_check"
-                    android:src="@drawable/ic_settings_black_24dp" />
+                    android:src="@drawable/ic_settings_black_24dp"
+                    android:visibility="gone"/>
 
                 <ImageView
                     android:id="@+id/ic_check"
@@ -43,7 +44,8 @@
                     android:layout_alignParentEnd="true"
                     android:layout_alignTop="@+id/ic_setting"
                     android:layout_marginEnd="11dp"
-                    android:src="@drawable/ic_check_black_24dp" />
+                    android:src="@drawable/ic_check_black_24dp"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:id="@+id/user_profile_name"
@@ -88,7 +90,7 @@
                 android:clickable="true"
                 android:elevation="4dp"
                 android:padding="20dp"
-                android:text="Địa chỉ" />
+                android:text="Email" />
 
             <TextView
                 android:layout_width="fill_parent"
@@ -99,39 +101,18 @@
                 android:clickable="true"
                 android:elevation="4dp"
                 android:padding="20dp"
-                android:text="Số điện thoại" />
+                android:text="Level" />
+
             <TextView
                 android:layout_width="fill_parent"
-                android:id="@+id/information_gioitinh"
+                android:id="@+id/profile_logout"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:background="#fff"
                 android:clickable="true"
                 android:elevation="4dp"
                 android:padding="20dp"
-                android:text="Giới tính" />
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:background="#fff"
-                android:elevation="4dp"
-                android:paddingTop="20dp"
-                android:paddingBottom="20dp"
-                android:layout_margin="5dp">
-                <TextView
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/profile_logout"
-                    android:background="?selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:text="Log out"
-                    android:paddingLeft="20dp"
-                    android:paddingStart="20dp"
-                    android:paddingRight="20dp"
-                    android:paddingEnd="20dp" />
-            </LinearLayout>
+                android:text="Đăng xuất" />
 
         </LinearLayout>
 

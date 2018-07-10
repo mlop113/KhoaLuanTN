@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.Models.Article;
 
@@ -33,9 +32,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (!database.exists()) {
             this.getReadableDatabase();
             if (copyDatabase(context)) {
-                Toast.makeText(context, "copy database succes", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "DatabaseHelper: copy database succes");
             } else {
-                Toast.makeText(context, "copy database fail", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "DatabaseHelper: copy database fail");
             }
         }
         /*this.getReadableDatabase();

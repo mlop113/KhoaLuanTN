@@ -36,15 +36,18 @@
                         android:textStyle="bold"
                         android:textSize="20dp" />
 
-                    <ImageButton
+                    <com.joooonho.SelectableRoundedImageView
                         android:id="@+id/imageButtonPlus"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginRight="8dp"
                         android:layout_alignParentEnd="true"
                         android:layout_alignParentRight="true"
                         android:layout_centerInParent="true"
-                        android:layout_gravity="right|end"
-                        android:layout_weight="0.72"
+                        android:scaleType="centerCrop"
+                        app:sriv_border_color="@android:color/white"
+                        app:sriv_border_width="1dp"
+                        app:sriv_oval="true"
                         android:background="@color/back_ground_color"
                         android:src="@drawable/icon_user1"
                         android:textSize="24sp" />

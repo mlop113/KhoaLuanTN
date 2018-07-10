@@ -63,7 +63,7 @@ public class BookMarkActivity extends AppCompatActivity implements View.OnClickL
         }
         else
         {
-            Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
             finish();
         }
 

@@ -33,7 +33,7 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
         }
     }
 
-    private boolean isOnline2(Context context) {
+    private boolean isOnline(Context context) {
         try {
             ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo netInfo = cm.getActiveNetworkInfo();
@@ -45,7 +45,7 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
         }
     }
 
-    private boolean isOnline(Context context) {
+    private boolean isOnline2(Context context) {
         if (isOnline2(context)) {
             try {
                 HttpURLConnection urlc = (HttpURLConnection) (new URL(GlobalStaticData.URL_HOST).openConnection());

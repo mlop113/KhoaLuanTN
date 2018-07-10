@@ -12,6 +12,7 @@
     <dimen name="item_post_width">250dp</dimen>
     <dimen name="actionbar_size">45dp</dimen>
     <integer name="slide_animation_duration">300</integer>
+    <integer name="ime_actionid">100</integer>
 
 
 </resources>

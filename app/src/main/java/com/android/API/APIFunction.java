@@ -90,6 +90,17 @@ public class APIFunction {
         return listArticle;
     }
 
+    public List<Article> searchArticle(String strSearch) {
+        List<Article> listArticle = new ArrayList<>();
+        final Call<List<Article>> call = apiService.searchArticle(strSearch);
+        try {
+            listArticle = call.execute().body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return listArticle;
+    }
+
     //User
     public User getUser_byID(String userID) {
         User user = null;

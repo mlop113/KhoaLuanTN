@@ -17,7 +17,6 @@ import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Models.Article;
-import com.android.Models.Post;
 import com.android.R;
 import com.bumptech.glide.Glide;
 
@@ -65,9 +64,6 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         }
         itemViewHolder.textViewTitile.setText(article.getTitle());
 
-      //  checkLiked(post);
-
-
 
         itemViewHolder.relativeLayoutSummary.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,67 +74,6 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             }
         });
 
-
-    }
-
-    private void checkLiked(final Post post, final ImageView imageViewLike, final TextView textViewLike){
-        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String userId = appPreferences.getUserId();
-                long count  = dataSnapshot.child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount();
-                if(post.getUserLikeIds()!=null && count>0) {
-                    if (post.getUserLikeIds().contains(userId)) {
-                        imageViewLike.setImageResource(R.drawable.ic_liked);
-                    } else {
-                        imageViewLike.setImageResource(R.drawable.ic_like);
-                    }
-                    textViewLike.setText(String.valueOf(count));
-                }
-                else {
-                    imageViewLike.setImageResource(R.drawable.ic_like);
-                    textViewLike.setText("0");
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });*/
-    }
-
-    private void onClickLikePost(final Post post, final ImageView imageViewLike){
-        /*if(appPreferences.isLogin()) {
-            //get from user_post
-            String userId = appPreferences.getUserId();
-            if (post.getUserLikeIds() != null && post.getUserLikeIds().size() > 0) {
-                //if user liked this post
-                if (post.getUserLikeIds().contains(userId)) {
-                    post.getUserLikeIds().remove(userId);
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).setValue(post.getUserLikeIds());
-                } else {
-                    post.getUserLikeIds().add(userId);
-                    databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                            .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).setValue(post.getUserLikeIds());
-                }
-            } else {
-                post.setUserLikeIds(new ArrayList<String>());
-                post.getUserLikeIds().add(userId);
-                databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId())
-                        .child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).child("0").setValue(String.valueOf(userId)).addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        imageViewLike.startAnimation(hyperspaceJumpAnimation);
-                    }
-                });
-            }
-        }
-        else{
-            Intent intentLogin = new Intent(context,Login.class);
-            context.startActivity(intentLogin);
-        }*/
 
     }
 

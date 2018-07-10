@@ -175,6 +175,11 @@ public class PostDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         comment_adapter.updateComment(comment, position);
     }
 
+    public void reLoad(){
+        comment_adapter.notifyDataSetChanged();
+        notifyDataSetChanged();
+    }
+
     private boolean isLoading;
 
     public void loadMore() {

@@ -34,6 +34,8 @@ public interface APIService {
     @GET("api/news/getlist/related/{articleid}")
     Call<List<Article>> getListArticle_related(@Path("articleid") String articleID);
 
+    @GET("api/news/search/{strsearch}")
+    Call<List<Article>> searchArticle(@Path("strsearch") String strSearch);
 
     //User
     @GET("api/user/getlist")

@@ -6,7 +6,7 @@
     <string name="banner_ad_unit_id">ca-app-pub-5917310053120916/9782688156</string>-->
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="btn_cancel">Xóa</string>
+    <string name="btn_cancel">Hủy</string>
     <string name="btn_ok">Đồng ý</string>
     <string name="action_bookmarks">Trang đánh dấu</string>
     <string name="action_fillter">Bộ lọc</string>
@@ -18,15 +18,13 @@
     <string name="quicksearch">Tìm nhanh</string>
     <string name="categoryname">Chuyên mục</string>
     <string name="taghot">Hot</string>
-    <!--<string name="facebook_app_id">767879083418219</string>-->
-    <!--<string name="fb_login_protocol_scheme">fb767879083418219</string>-->
-    <string name="facebook_app_id">472159863249180</string>
-    <string name="fb_login_protocol_scheme">fb472159863249180</string>
     <string name="tagNew">New</string>
     <string name="waitlogin">Logining</string>
     <string name="savebookmark">Đã lưu bài viết</string>
     <string name="removebookmark">Đã bỏ lưu bài viết</string>
     <string name="login_facebook">Login Facebook</string>
+    <string name="facebook_app_id">472159863249180</string>
+    <string name="fb_login_protocol_scheme">fb472159863249180</string>
     <string name="like">Thích</string>
     <string name="unlike">Bỏ thích</string>
     <string name="comment_like">Thích</string>

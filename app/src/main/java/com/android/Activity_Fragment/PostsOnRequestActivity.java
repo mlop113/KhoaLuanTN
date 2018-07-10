@@ -65,7 +65,7 @@ public class PostsOnRequestActivity extends AppCompatActivity implements View.On
         }
         else
         {
-            Toast.makeText(this, "Error data transfer", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
             finish();
         }
 

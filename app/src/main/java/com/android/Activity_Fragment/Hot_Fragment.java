@@ -22,7 +22,6 @@ import com.android.MainActivity;
 import com.android.Models.Article;
 import com.android.Models.Category;
 import com.android.R;
-import com.android.RetrofitServices.Models_R.WeaService;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -40,7 +39,6 @@ import java.util.List;
  */
 
 public class Hot_Fragment extends Fragment implements IOnClickFilter {
-    private WeaService weaService;
     SwipeRefreshLayout swipeRefresh;
     //listdata article
     List<Article> listArticle = new ArrayList<>();
@@ -97,22 +95,6 @@ public class Hot_Fragment extends Fragment implements IOnClickFilter {
         linearLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, true);
         linearLayoutManager.setStackFromEnd(true);
 
-       /* weaService= Api_Utils.getSOService();
-        weaService.getAnswers().enqueue(new Callback<ResponeServices>() {
-            @Override
-            public void onResponse(Call<ResponeServices> call, Response<ResponeServices> response) {
-                if (response.isSuccessful())
-                {
-                    tagAdapter = new TagAdapter(getContext(),response.body().getQuery().getResults().getChannel().getItem().getForecast();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ResponeServices> call, Throwable t) {
-
-            }
-        });*/
-
         //RecyclerView summary
         recyclerViewSummary.setLayoutManager(new LinearLayoutManager(getContext()));
         summary_adapter = new SummaryAdapter(getContext(), listArticle, listCategory);
@@ -139,31 +121,12 @@ public class Hot_Fragment extends Fragment implements IOnClickFilter {
 
     @Override
     public void onClickFilter(final String date) {
-        /*summary_adapter.setListArticle(listArticle);
-        if(GlobalFunction.filter(post,date))
-        {
-            listPost.add(post);
-            summary_adapter.setListPost(listPost);
-        }*/
+
     }
 
     @Override
     public void onClickClearFilter() {
-        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                listPost=new ArrayList<Post>();
-                for(DataSnapshot datapost:dataSnapshot.getChildren()){
-                    listPost.add(datapost.getValue(Post.class));
-                    summary_adapter.setListPost(listPost);
-                }
-            }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });*/
     }
 
     public void updateNetwork(boolean isAvaiable) {

@@ -13,12 +13,14 @@ import android.widget.Toast;
 
 import com.android.API.APIFunction;
 import com.android.API.Response;
+import com.android.Global.AppConfig;
 import com.android.Models.User;
 import com.android.R;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.Auth;
@@ -46,7 +48,7 @@ import java.util.Date;
 
 import dmax.dialog.SpotsDialog;
 
-public class LoginDialogActivity extends AppCompatActivity  implements View.OnClickListener,GoogleApiClient.OnConnectionFailedListener  {
+public class LoginDialogActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener {
     final static String TAG = LoginDialogActivity.class.getSimpleName();
     private RelativeLayout rlFacebook;
     private RelativeLayout rlGoogle;
@@ -68,6 +70,7 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_login_dialog);
         getWindow().getAttributes().width = WindowManager.LayoutParams.MATCH_PARENT;
         this.setFinishOnTouchOutside(true);
@@ -83,7 +86,7 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
         rlFacebook.setOnClickListener(this);
         rlGoogle.setOnClickListener(this);
         quitDialog.setOnClickListener(this);
-        progressDialog = new SpotsDialog(this,R.style.CustomAlertDialog);
+        progressDialog = new SpotsDialog(this, R.style.CustomAlertDialog);
 
         firebaseAuth = FirebaseAuth.getInstance();
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -91,17 +94,17 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                 .requestEmail()
                 .build();
         googleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this,this)
-                .addApi(Auth.GOOGLE_SIGN_IN_API,gso)
+                .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
         authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
                 if (firebaseUser != null) {
-                    Log.d(TAG, "onAuthStateChanged:: signined_id:  "+firebaseUser.getUid());
-                    updateUI(user);
-                }else{
+                    Log.d(TAG, "onAuthStateChanged:: signined_id:  " + firebaseUser.getUid());
+                    updateUI(firebaseUser);
+                } else {
                     Log.d(TAG, "onAuthStateChanged:: sign_out");
                 }
             }
@@ -119,15 +122,15 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(authStateListener!=null){
+        if (authStateListener != null) {
             firebaseAuth.removeAuthStateListener(authStateListener);
         }
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.d(TAG, "onConnectionFailed: "+connectionResult);
-        Toast.makeText(this, "Google Play Service error", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onConnectionFailed: " + connectionResult);
+        Toast.makeText(this, "Google Play Service trên thiết bị bị lỗi!", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -138,7 +141,7 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
             if (result.isSuccess()) {
                 GoogleSignInAccount account = result.getSignInAccount();
                 firebaseAuthWithGoogle(account);
-            }else{
+            } else {
                 updateUI(null);
             }
         }
@@ -147,22 +150,25 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
     }
 
 
-    private void onLogin(){
-        Response response = apiFunction.loginUser(new User("123123", "asdsad", "asdasd", "asdsad", "asdasd", "1"));
+    private void onLogin(FirebaseUser firebaseUser) {
+        Date myDate = new Date();
+        Response response = apiFunction.loginUser(new User(firebaseUser.getUid(), firebaseUser.getEmail(), firebaseUser.getDisplayName(), firebaseUser.getPhotoUrl().toString(), new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate), "1"));
         if (response != null) {
             if (response.isSuccess()) {
                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                setResult(AppConfig.RESULT_CODE_LOGIN);
+                finish();
             } else {
                 Toast.makeText(this, "Đăng nhập không thành công!", Toast.LENGTH_SHORT).show();
             }
-            Log.d(TAG, "login: "+response.getMessage());
+            Log.d(TAG, "login: " + response.getMessage());
         } else {
             Toast.makeText(this, "Đăng nhập không thành công!", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
-        Log.d(TAG, "firebaseAuthWithGoogle: "+account.getId());
+        Log.d(TAG, "firebaseAuthWithGoogle: " + account.getId());
         progressDialog.show();
 
         Log.d(TAG, "firebaseAuthWithGoogle:" + account.getId());
@@ -181,15 +187,13 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
                             updateUI(null);
-                            try{
-                                throw  task.getException();
+                            try {
+                                throw task.getException();
 
-                            }
-                            catch (FirebaseNetworkException e){
+                            } catch (FirebaseNetworkException e) {
                                 Toast.makeText(LoginDialogActivity.this, "Chưa kết nối mạng", Toast.LENGTH_SHORT).show();
-                            }
-                            catch (Exception e){
-                                Toast.makeText(LoginDialogActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            } catch (Exception e) {
+                                Toast.makeText(LoginDialogActivity.this, "Lỗi! Không thể đăng nhập", Toast.LENGTH_SHORT).show();
                             }
                         }
 
@@ -198,13 +202,13 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                 });
     }
 
-    private void signinWithGoogle(){
+    private void signinWithGoogle() {
         revokeAccess();
         Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(googleApiClient);
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
-    private void sigoutGoogle(){
+    private void sigoutGoogle() {
         firebaseAuth.signOut();
 
         Auth.GoogleSignInApi.signOut(googleApiClient).setResultCallback(new ResultCallback<Status>() {
@@ -215,7 +219,7 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
         });
     }
 
-    private void revokeAccess(){
+    private void revokeAccess() {
         firebaseAuth.signOut();
 
         Auth.GoogleSignInApi.signOut(googleApiClient).setResultCallback(new ResultCallback<Status>() {
@@ -226,11 +230,11 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
         });
     }
 
-    private void updateUI(FirebaseUser user){
-        if (user != null && user.isEmailVerified()) {
-            Toast.makeText(this, "login success ", Toast.LENGTH_SHORT).show();
-        }else{
-            Toast.makeText(this, "log unsuccess ", Toast.LENGTH_SHORT).show();
+    private void updateUI(FirebaseUser user) {
+        if (user != null) {
+            onLogin(user);
+        } else {
+            //Toast.makeText(this, "Lỗi! Không thể đăng nhập", Toast.LENGTH_SHORT).show();
         }
         progressDialog.dismiss();
     }
@@ -248,18 +252,16 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithCredential:success");
                             user = firebaseAuth.getCurrentUser();
-                            Toast.makeText(LoginDialogActivity.this, "success", Toast.LENGTH_SHORT).show();
+                            updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
                             try {
-                                throw  task.getException();
-                            }
-                            catch (FirebaseNetworkException e){
+                                throw task.getException();
+                            } catch (FirebaseNetworkException e) {
                                 Toast.makeText(LoginDialogActivity.this, "Chưa kết nối mạng", Toast.LENGTH_SHORT).show();
-                            }
-                            catch (Exception e){
-                                Toast.makeText(LoginDialogActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            } catch (Exception e) {
+                                Toast.makeText(LoginDialogActivity.this, "Lỗi! Không thể đăng nhập", Toast.LENGTH_SHORT).show();
                             }
                             updateUI(null);
                         }
@@ -268,6 +270,7 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                     }
                 });
     }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -290,9 +293,9 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
 
                     @Override
                     public void onError(FacebookException error) {
-                        Log.d(TAG, "facebook:onError"+ error);
+                        Log.d(TAG, "facebook:onError" + error);
                         progressDialog.dismiss();
-                        if(error.getMessage().toString().contains("CONNECTION_FAILURE")){
+                        if (error.getMessage().toString().contains("CONNECTION_FAILURE")) {
                             Toast.makeText(LoginDialogActivity.this, "Chưa kết nối mạng", Toast.LENGTH_SHORT).show();
                         }
                         // ...
@@ -306,5 +309,11 @@ public class LoginDialogActivity extends AppCompatActivity  implements View.OnCl
                 finish();
                 break;
         }
+    }
+
+    @Override
+    public void finish() {
+        setResult(AppConfig.RESULT_CODE_LOGIN);
+        super.finish();
     }
 }

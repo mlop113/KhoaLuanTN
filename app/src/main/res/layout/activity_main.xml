@@ -82,7 +82,8 @@
                             android:scrollHorizontally="true"
                             android:textColor="@color/text_search"
                             android:textColorHint="@color/colorBorder"
-                            android:textSize="16sp"/>
+                            android:textSize="16sp"
+                            android:imeActionId="@integer/ime_actionid"/>
                     </LinearLayout>
                 </LinearLayout>
                 <LinearLayout
@@ -106,7 +107,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:text="English"
+                        android:text="Vietnamese"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginLeft="5dp"

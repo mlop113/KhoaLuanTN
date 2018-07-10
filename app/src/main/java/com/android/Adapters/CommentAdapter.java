@@ -19,7 +19,6 @@ import com.android.API.Response;
 import com.android.Activity_Fragment.LoginDialogActivity;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
-import com.android.Global.GlobalStaticData;
 import com.android.Models.Article;
 import com.android.Models.Comment;
 import com.android.Models.Comment_UserModel;
@@ -27,6 +26,8 @@ import com.android.Models.FeedbackComment;
 import com.android.Models.User;
 import com.android.R;
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,10 +45,12 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     APIFunction apiFunction;
 
     List<Comment> listFullComment;
-    int commentLoadMore = 5;
+    int numberLoadMore = 5;
     int startCommentPostion = 0;
     int lastCommentPostion = 0;
     private CommentInterface commentInterface;
+    FirebaseAuth firebaseAuth;
+    FirebaseUser firebaseUser;
 
     public CommentAdapter(Context context, Article article, List<Comment> listFullComment) {
         this.context = context;
@@ -56,6 +59,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         this.listDataComment = new ArrayList<>();
         appPreferences = AppPreferences.getInstance(context);
         apiFunction = new APIFunction();
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseUser = firebaseAuth.getCurrentUser();
         try {
             commentInterface = (CommentInterface) context;
         } catch (ClassCastException e) {
@@ -69,12 +74,12 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         if (lastCommentPostion >= listFullComment.size()) {
             return listMore;
         }
-        if (lastCommentPostion + commentLoadMore >= listFullComment.size()) {
+        if (lastCommentPostion + numberLoadMore >= listFullComment.size()) {
             startCommentPostion = lastCommentPostion;
             lastCommentPostion = listFullComment.size();
         } else {
             startCommentPostion = lastCommentPostion;
-            lastCommentPostion += commentLoadMore;
+            lastCommentPostion += numberLoadMore;
         }
         listMore = listFullComment.subList(startCommentPostion, lastCommentPostion);
         return listMore;
@@ -146,12 +151,12 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         }
 
         checkLiked(listComment_user,
-                new Comment_UserModel(comm.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()), holder.textViewLike, holder.imageViewLike);
+                new Comment_UserModel(comm.getCommentID(), firebaseUser == null ? null : firebaseUser.getUid()), holder.textViewLike, holder.imageViewLike);
 
         holder.textViewLike.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                onClickLikeComment(position, new Comment_UserModel(comm.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()), holder.textViewLike);
+                onClickLikeComment(position, new Comment_UserModel(comm.getCommentID(), firebaseUser == null ? null : firebaseUser.getUid()), holder.textViewLike);
             }
         });
 
@@ -160,17 +165,25 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
             public void onClick(View v) {
                 if (GlobalFunction.isNetworkAvailable(context)) {
                     final List<CharSequence> charSequences = new ArrayList<>();
-                    if (apiFunction.checkLikeComment(comm.getCommentID(), GlobalStaticData.getCurrentUser().getUserID())) {
+                    if (firebaseAuth.getCurrentUser() != null && apiFunction.checkLikeComment(comm.getCommentID(), firebaseUser.getUid())) {
                         charSequences.add(context.getString(R.string.comment_unlike));
                     } else {
                         charSequences.add(context.getString(R.string.comment_like));
                     }
                     charSequences.add(context.getString(R.string.comment_reply));
-                    if (comm.getUserID().equals(GlobalStaticData.getCurrentUser().getUserID())) {
+                    if (firebaseAuth.getCurrentUser() != null && comm.getUserID().equals(firebaseUser.getUid())) {
                         charSequences.add(context.getString(R.string.comment_edit));
                         charSequences.add(context.getString(R.string.comment_delete));
                     } else {
-                        charSequences.add(context.getString(R.string.comment_report));
+                        try{
+                            User user1 = apiFunction.getUser_byID(firebaseUser.getUid());
+                            if(Integer.parseInt(user1.getUser_LevelID())>=2 ){
+                                charSequences.add(context.getString(R.string.comment_report));
+                            }
+                        }catch (Exception e){
+
+                        }
+
                     }
 
                     if (charSequences.size() > 0) {
@@ -178,10 +191,10 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
                             @Override
                             public void onClick(DialogInterface dialogInterface, int positionSelected) {
                                 Log.d(TAG, "onClick: " + positionSelected);
-                                if (GlobalStaticData.getCurrentUser() != null) {
+                                if (firebaseAuth.getCurrentUser() != null) {
                                     if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_like))
                                             || charSequences.get(positionSelected).equals(context.getString(R.string.comment_unlike))) {
-                                        onClickLikeComment(position, new Comment_UserModel(comm.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()), holder.textViewLike);
+                                        onClickLikeComment(position, new Comment_UserModel(comm.getCommentID(), firebaseAuth.getCurrentUser() == null ? null : firebaseAuth.getCurrentUser().getUid()), holder.textViewLike);
                                     } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_reply))) {
                                         commentInterface.onClickReply(comm, position);
                                     } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_edit))) {
@@ -191,8 +204,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
                                     } else if (charSequences.get(positionSelected).equals(context.getString(R.string.comment_report))) {
                                         commentInterface.onReportComment(comm);
                                     }
-                                }else{
-                                    context.startActivity(new Intent(context,LoginDialogActivity.class));
+                                } else {
+                                    context.startActivity(new Intent(context, LoginDialogActivity.class));
                                 }
                                 dialogInterface.dismiss();
                             }
@@ -300,7 +313,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     private void checkLiked(final List<Comment_UserModel> listComment_user, Comment_UserModel comment_user, TextView textViewLike, ImageView imageViewLike) {
         if (listComment_user != null && listComment_user.size() > 0) {
             imageViewLike.setVisibility(View.VISIBLE);
-            if (apiFunction.checkLikeComment(comment_user.getCommentID(), comment_user.getUserID())) {
+            if (comment_user.getUserID() != null && apiFunction.checkLikeComment(comment_user.getCommentID(), comment_user.getUserID())) {
                 textViewLike.setText(R.string.unlike);
             } else {
                 textViewLike.setText(R.string.like);
@@ -309,41 +322,11 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
             textViewLike.setText(R.string.like);
             imageViewLike.setVisibility(View.GONE);
         }
-        /*databaseReference.child(AppConfig.FIREBASE_FIELD_POSTS).child(post.getPostId()).child(AppConfig.FIREBASE_FIELD_COMMENTS).child(comment.getCommentId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.hasChild(AppConfig.FIREBASE_FIELD_USERLIKEIDS)) {
-                    String userId = appPreferences.getUserId();
-                    Comment comment1 = dataSnapshot.getValue(Comment.class);
-                    List<String> userLikeId = comment1.getUserLikeIds();
-                    long count = dataSnapshot.child(AppConfig.FIREBASE_FIELD_USERLIKEIDS).getChildrenCount();
-                    if (userLikeId != null && count > 0) {
-                        if (userLikeId.contains(userId)) {
-                            textViewLike.setTextColor(context.getResources().getColor(R.color.likedcomment));
-                        } else {
-                            textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                        }
-                    } else {
-                        textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                    }
-                }
-                else {
-                    textViewLike.setTextColor(context.getResources().getColor(R.color.black));
-                }
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });*/
-
     }
 
     private void onClickLikeComment(int position, Comment_UserModel comment_user, final TextView textViewLike) {
         Log.d(TAG, "onClickLikeComment: 1");
-        if (GlobalStaticData.getCurrentUser()!=null) {
+        if (comment_user.getUserID() != null) {
             Log.d(TAG, "onClickLikeComment: 2");
             if (apiFunction.checkLikeComment(comment_user.getCommentID(), comment_user.getUserID())) {
                 Log.d(TAG, "onClickLikeComment: 3");
@@ -363,7 +346,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
                 }
             }
         } else {
-            context.startActivity(new Intent(context,LoginDialogActivity.class));
+            context.startActivity(new Intent(context, LoginDialogActivity.class));
         }
         /*if(appPreferences.isLogin()) {
             String userId = appPreferences.getUserId();

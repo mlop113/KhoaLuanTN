@@ -24,7 +24,6 @@ import com.android.Adapters.FeedbackCommentAdapter;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
-import com.android.Global.GlobalStaticData;
 import com.android.Interface.IOnClickFeedback;
 import com.android.Models.Article;
 import com.android.Models.Comment;
@@ -32,6 +31,8 @@ import com.android.Models.Comment_UserModel;
 import com.android.Models.FeedbackComment;
 import com.android.Models.ReportFeedbackComment;
 import com.android.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -84,7 +85,8 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     String action = ACTION_COMMENT_INSERT;
     FeedbackComment currentFeedbackComment = null;
     int currentFeedbackCommentPosition = -1;
-
+    FirebaseAuth firebaseAuth;
+    FirebaseUser firebaseUser;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +95,9 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
         databaseReference = FirebaseDatabase.getInstance().getReference();
         apiFunction = APIFunction.getInstance();
         inputMethodManager = (InputMethodManager) getSystemService(this.INPUT_METHOD_SERVICE);
+
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseUser = firebaseAuth.getCurrentUser();
 
         //animation
         animlike = AnimationUtils.loadAnimation(this, R.anim.animlike);
@@ -104,7 +109,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
             article = (Article) intent.getSerializableExtra(AppConfig.POST);
         } else {
             finish();
-            Toast.makeText(this, "Error data tranfer", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
         }
         mapping();
         initView();
@@ -156,7 +161,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                 break;
             case R.id.linearLayoutSend:
                 inputMethodManager.hideSoftInputFromWindow(editTextComment.getWindowToken(), 0);
-                if (GlobalStaticData.getCurrentUser()!=null) {
+                if (firebaseUser!=null) {
                     if (GlobalFunction.isNetworkAvailable(this)) {
                         long time = new java.util.Date().getTime();
                         String feedbackID = Long.toString(time);
@@ -178,7 +183,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                                 FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
                                         , content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        GlobalStaticData.getCurrentUser().getUserID());
+                                        firebaseUser.getUid());
                                 new SendRequestAsyncTask().execute(feedbackComment);
                             } else if (action.equals(ACTION_COMMENT_EDIT)) {
                                 currentFeedbackComment.setContent(content);
@@ -187,7 +192,7 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
                                 FeedbackComment feedbackComment = new FeedbackComment(String.valueOf(myDate.getTime()), comment.getCommentID()
                                         , content,
                                         new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(myDate),
-                                        GlobalStaticData.getCurrentUser().getUserID());
+                                        firebaseUser.getUid());
                                 new SendRequestAsyncTask().execute(feedbackComment);
                             }
                         }
@@ -307,6 +312,12 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        firebaseUser = firebaseAuth.getCurrentUser();
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         checkAction();
@@ -337,8 +348,8 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     private void checkLiked() {
-        if (GlobalStaticData.getCurrentUser()!=null) {
-            if (apiFunction.checkLikeComment(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID())) {
+        if (firebaseUser!=null) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), firebaseUser.getUid())) {
                 imageViewLike.setImageResource(R.drawable.ic_liked);
             } else {
                 imageViewLike.setImageResource(R.drawable.ic_like);
@@ -349,16 +360,16 @@ public class FeedbackCommentActivity extends AppCompatActivity implements View.O
     }
 
     private void onClickLikeComment() {
-        if (GlobalStaticData.getCurrentUser()!=null) {
-            if (apiFunction.checkLikeComment(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID())) {
-                Response response = apiFunction.deleteLikeComment(new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()));
+        if (firebaseUser!=null) {
+            if (apiFunction.checkLikeComment(comment.getCommentID(), firebaseUser.getUid())) {
+                Response response = apiFunction.deleteLikeComment(new Comment_UserModel(comment.getCommentID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.setImageResource(R.drawable.ic_like);
                 } else {
                     Log.d(TAG, "deleteLikeComment: false");
                 }
             } else {
-                Response response = apiFunction.insertLikeComment(new Comment_UserModel(comment.getCommentID(), GlobalStaticData.getCurrentUser().getUserID()));
+                Response response = apiFunction.insertLikeComment(new Comment_UserModel(comment.getCommentID(), firebaseUser.getUid()));
                 if (response != null && response.getMessage().contains("complete")) {
                     imageViewLike.startAnimation(animlike);
                     imageViewLike.setImageResource(R.drawable.ic_liked);
