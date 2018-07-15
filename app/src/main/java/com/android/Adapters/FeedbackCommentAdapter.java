@@ -157,7 +157,14 @@ public class FeedbackCommentAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                 charSequences.add(context.getString(R.string.comment_edit));
                                 charSequences.add(context.getString(R.string.comment_delete));
                             } else {
-                                charSequences.add(context.getString(R.string.comment_report));
+                                try{
+                                    User user1 = apiFunction.getUser_byID(firebaseUser.getUid());
+                                    if(Integer.parseInt(user1.getUser_LevelID())>=2 ){
+                                        charSequences.add(context.getString(R.string.comment_report));
+                                    }
+                                }catch (Exception e){
+
+                                }
                             }
 
                             if (charSequences.size() > 0) {

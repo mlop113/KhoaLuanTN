@@ -53,6 +53,8 @@ CREATE TABLE `article_bookmark` (
 
 /*Data for the table `article_bookmark` */
 
+insert  into `article_bookmark`(`ArticleID`,`UserID`) values (1531219555712,'AFqOkev8dJZmOswfe8f40Ba8Fuo1');
+
 /*Table structure for table `article_like` */
 
 DROP TABLE IF EXISTS `article_like`;
@@ -98,7 +100,7 @@ CREATE TABLE `comment` (
 
 /*Data for the table `comment` */
 
-insert  into `comment`(`CommentID`,`Content`,`DateCreate`,`UserID`,`ArticleID`) values (1531235231360,'tin Anh sẽ vô địch','10-07-2018 22:07:11','AFqOkev8dJZmOswfe8f40Ba8Fuo1',1531219555712);
+insert  into `comment`(`CommentID`,`Content`,`DateCreate`,`UserID`,`ArticleID`) values (1531235231360,'tin Anh sẽ vô địch','10-07-2018 22:07:11','AFqOkev8dJZmOswfe8f40Ba8Fuo1',1531219555712),(1531568825312,'Báo hay','14-07-2018 18:47:05','sI7ChhmWrFa0tBCotAqaRpsC2JR2',1531219555712),(1531569185387,'xin chào','14-07-2018 18:53:05','AFqOkev8dJZmOswfe8f40Ba8Fuo1',1531219555712);
 
 /*Table structure for table `comment_like` */
 
@@ -113,7 +115,7 @@ CREATE TABLE `comment_like` (
 
 /*Data for the table `comment_like` */
 
-insert  into `comment_like`(`CommentID`,`UserID`) values (1531235231360,'opnWtplMFNUadXKDgM3vHuD1CR22');
+insert  into `comment_like`(`CommentID`,`UserID`) values (1531235231360,'AFqOkev8dJZmOswfe8f40Ba8Fuo1'),(1531235231360,'opnWtplMFNUadXKDgM3vHuD1CR22'),(1531235231360,'sI7ChhmWrFa0tBCotAqaRpsC2JR2');
 
 /*Table structure for table `feedback_comment` */
 
@@ -132,7 +134,7 @@ CREATE TABLE `feedback_comment` (
 
 /*Data for the table `feedback_comment` */
 
-insert  into `feedback_comment`(`FeedbackCommentID`,`CommentID`,`Content`,`DateCreate`,`UserID`) values (1531235262511,1531235231360,'đồng quan điểm','10-07-2018 22:07:42','opnWtplMFNUadXKDgM3vHuD1CR22');
+insert  into `feedback_comment`(`FeedbackCommentID`,`CommentID`,`Content`,`DateCreate`,`UserID`) values (1531235262511,1531235231360,'đồng quan điểm','10-07-2018 22:07:42','opnWtplMFNUadXKDgM3vHuD1CR22'),(1531569194326,1531235231360,'hi','14-07-2018 18:53:14','AFqOkev8dJZmOswfe8f40Ba8Fuo1');
 
 /*Table structure for table `report_comment` */
 
@@ -168,6 +170,8 @@ CREATE TABLE `report_feedback` (
 
 /*Data for the table `report_feedback` */
 
+insert  into `report_feedback`(`ReportID`,`FeedbackCommentID`,`Content`,`DateCreate`,`UserID`) values (1531569207129,1531235262511,'không phù hơp','14-07-2018 18:53:27','AFqOkev8dJZmOswfe8f40Ba8Fuo1');
+
 /*Table structure for table `tag` */
 
 DROP TABLE IF EXISTS `tag`;
@@ -179,7 +183,7 @@ CREATE TABLE `tag` (
 
 /*Data for the table `tag` */
 
-insert  into `tag`(`Name`,`ArticleID`) values ('Real',1531183581259),('Madrid',1531183581259),('Spain',1531183669392),('',1531183769516),('WorldCup',1531183892224),('Croatia',1531183892224),('',1531183892224),('WorldCup',1531183989356),('Croatia',1531183989356),('',1531183989356),('Arsenal',1531184382310),('WestHam',1531184382310),('ĐTBỉ',1531184569780),('Martinez',1531184569780),('',1531184569780),('AshleyYoung',1531193579742),('',1531193579742),('ĐTAnh',1531193579742),('ĐTCroatia',1531193791079),('ĐTAnh',1531193791079),('Mbappe',1531194362499),('',1531194362499),('Monaco',1531194362499),('',1531194362499),('Deschamps',1531194499435),('Kante',1531194499435),('',1531194499435),('Sterling',1531201312538),('WorldCup2018',1531201448114),('DavorSuker',1531201574456),('ĐTAnh',1531201574456),('Kane',1531201689971),('TamSư',1531201689971),('ĐTAnh',1531201689971),('',1531201888246),('Arsenal',1531202015857),('BerndLeno',1531202015857),('M.U',1531202114578),('Milinkovic-Savic',1531202114578),('RealMadrid',1531202916538),('RealMadrid',1531203052120),('Hazard',1531203052120),('',1531203052120),('RealMadrid',1531203619178),('Mbappe',1531203619178),('Juventus',1531203820372),('',1531203820372),('Ronaldo',1531203820372),('Ronaldo',1531203994095),('',1531203994095),('Juventus',1531203994095),('',1531204737871),('Ronaldo',1531205718831),('',1531205718831),('Juventus',1531205718831),('M.U',1531205833902),('Barca',1531205833902),('',1531205833902),('M.U',1531205916644),('U19',1531206012261),('VN',1531206012261),('',1531206513185),('',1531207385056),('U19',1531215947990),('VN',1531215947990),('Singapore',1531215947990),('VN',1531216073372),('V-League',1531216073372),('VN',1531216176920),('CôngPhượng',1531216176920),('CôngPhượng',1531216278280),('VN',1531216278280),('Arsenal',1531216419226),('',1531216419226),('WorldCup',1531216563191),('',1531216563191),('Brazil',1531216927055),('TuKet',1531216927055),('Belgum',1531216927055),('Neymar',1531217184415),('Ronaldo',1531217298518),('WorldCup',1531217392998),('',1531217392998),('Nga',1531217492924),('WorldCup',1531217492924),('Nga',1531217597432),('WorldCup',1531217597432),('ĐTBỉ',1531218131984),('Lukaku',1531218131984),('Pháp',1531218438738),('Belgum',1531218438738),('Pháp',1531218559541),('Belgum',1531218559541),('WorldCup',1531218559541),('Sterling',1531218666143),('ĐTAnh',1531218666143),('ĐTAnh',1531218832578),('',1531218832578),('',1531218916323),('Anh',1531219234758),('Croatia',1531219234758),('rắn',1531219406990),('Croatia',1531219555712),('WolrdCup',1531219555712);
+insert  into `tag`(`Name`,`ArticleID`) values ('Real',1531183581259),('Madrid',1531183581259),('Spain',1531183669392),('',1531183769516),('WorldCup',1531183892224),('Croatia',1531183892224),('',1531183892224),('WorldCup',1531183989356),('Croatia',1531183989356),('',1531183989356),('Arsenal',1531184382310),('WestHam',1531184382310),('ĐTBỉ',1531184569780),('Martinez',1531184569780),('',1531184569780),('AshleyYoung',1531193579742),('',1531193579742),('ĐTAnh',1531193579742),('ĐTCroatia',1531193791079),('ĐTAnh',1531193791079),('Mbappe',1531194362499),('',1531194362499),('Monaco',1531194362499),('',1531194362499),('Deschamps',1531194499435),('Kante',1531194499435),('',1531194499435),('Sterling',1531201312538),('WorldCup2018',1531201448114),('DavorSuker',1531201574456),('ĐTAnh',1531201574456),('Kane',1531201689971),('TamSư',1531201689971),('ĐTAnh',1531201689971),('',1531201888246),('Arsenal',1531202015857),('BerndLeno',1531202015857),('M.U',1531202114578),('Milinkovic-Savic',1531202114578),('RealMadrid',1531202916538),('RealMadrid',1531203052120),('Hazard',1531203052120),('',1531203052120),('RealMadrid',1531203619178),('Mbappe',1531203619178),('Juventus',1531203820372),('',1531203820372),('Ronaldo',1531203820372),('Ronaldo',1531203994095),('',1531203994095),('Juventus',1531203994095),('',1531204737871),('Ronaldo',1531205718831),('',1531205718831),('Juventus',1531205718831),('M.U',1531205833902),('Barca',1531205833902),('',1531205833902),('M.U',1531205916644),('U19',1531206012261),('VN',1531206012261),('',1531206513185),('',1531207385056),('U19',1531215947990),('VN',1531215947990),('Singapore',1531215947990),('VN',1531216073372),('V-League',1531216073372),('VN',1531216176920),('CôngPhượng',1531216176920),('CôngPhượng',1531216278280),('VN',1531216278280),('Arsenal',1531216419226),('',1531216419226),('WorldCup',1531216563191),('',1531216563191),('Brazil',1531216927055),('TuKet',1531216927055),('Belgum',1531216927055),('Neymar',1531217184415),('Ronaldo',1531217298518),('WorldCup',1531217392998),('',1531217392998),('Nga',1531217492924),('WorldCup',1531217492924),('Nga',1531217597432),('WorldCup',1531217597432),('ĐTBỉ',1531218131984),('Lukaku',1531218131984),('Pháp',1531218438738),('Belgum',1531218438738),('Pháp',1531218559541),('Belgum',1531218559541),('WorldCup',1531218559541),('Sterling',1531218666143),('ĐTAnh',1531218666143),('ĐTAnh',1531218832578),('',1531218832578),('',1531218916323),('Anh',1531219234758),('Croatia',1531219234758),('rắn',1531219406990),('Croatia',1531219555712),('WolrdCup',1531219555712),('',1531658121230);
 
 /*Table structure for table `user` */
 
@@ -198,7 +202,7 @@ CREATE TABLE `user` (
 
 /*Data for the table `user` */
 
-insert  into `user`(`UserID`,`Email`,`FullName`,`Image`,`DateCreate`,`User_LevelID`) values ('AFqOkev8dJZmOswfe8f40Ba8Fuo1','ponnguyenit@gmail.com','Nguyễn Ngọc Hải','https://graph.facebook.com/1860930563970031/picture','09-07-2018 14:45:23',1),('opnWtplMFNUadXKDgM3vHuD1CR22','vkngokiuckkho1@gmail.com','Hương Phạm Thị Thu','https://lh6.googleusercontent.com/-8TrjPrg-4_E/AAAAAAAAAAI/AAAAAAAAAAA/AAnnY7qn1CyAdS9fO_b2sJKBB0tf1KZNzQ/s96-c/photo.jpg','09-07-2018 15:12:43',1);
+insert  into `user`(`UserID`,`Email`,`FullName`,`Image`,`DateCreate`,`User_LevelID`) values ('AFqOkev8dJZmOswfe8f40Ba8Fuo1','ponnguyenit@gmail.com','Nguyễn Ngọc Hải','https://graph.facebook.com/1860930563970031/picture','09-07-2018 14:45:23',2),('opnWtplMFNUadXKDgM3vHuD1CR22','vkngokiuckkho1@gmail.com','Hương Phạm Thị Thu','https://lh6.googleusercontent.com/-8TrjPrg-4_E/AAAAAAAAAAI/AAAAAAAAAAA/AAnnY7qn1CyAdS9fO_b2sJKBB0tf1KZNzQ/s96-c/photo.jpg','09-07-2018 15:12:43',1),('sI7ChhmWrFa0tBCotAqaRpsC2JR2','congtuhot9.9@gmail.com','hai ngoc','https://lh3.googleusercontent.com/-exTr-X3tYZQ/AAAAAAAAAAI/AAAAAAAAAAA/AAnnY7qQW_cufg34FyZcgMB07Z7oUJplTA/s96-c/photo.jpg','14-07-2018 18:46:42',1);
 
 /*Table structure for table `user_level` */
 
