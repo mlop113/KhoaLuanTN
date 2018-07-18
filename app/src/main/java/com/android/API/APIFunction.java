@@ -393,4 +393,16 @@ public class APIFunction {
         }
         return response;
     }
+
+    public Response updatePoint(String userID, long point) {
+        Log.d("loguser", "updatePoint: "+point);
+        Response response = null;
+        Call<Response> call = apiService.updatePoint(userID, point);
+        try {
+            response = call.execute().body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
 }

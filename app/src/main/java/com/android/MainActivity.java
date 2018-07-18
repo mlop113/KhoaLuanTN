@@ -53,6 +53,7 @@ import com.joooonho.SelectableRoundedImageView;
 import org.droidparts.widget.ClearableEditText;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import dmax.dialog.SpotsDialog;
@@ -455,6 +456,17 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     protected void onResume() {
         super.onResume();
         updateUser(GlobalFunction.isNetworkAvailable(this));
+        if (firebaseUser != null) {
+            GlobalFunction.loginUser(this, firebaseUser.getUid(), new Date().getTime());
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (firebaseUser != null) {
+            GlobalFunction.logoutUser(this, firebaseUser.getUid(), new Date().getTime());
+        }
     }
 
     @Override

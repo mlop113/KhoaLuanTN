@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
 import com.android.Models.Article;
+import com.android.Models.UserTimeModel;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -156,5 +157,100 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public boolean checkUserExist(String userID) {
+        Log.d(TAG, "getListUserTime: ");
+        UserTimeModel userTimeModel = null;
+        openDatabase();
+        cursor = mDatabase.rawQuery("SELECT * FROM UserTime WHERE userID = '" + userID + "'", null);
+        while (cursor.moveToNext()) {
+            userTimeModel = new UserTimeModel(cursor.getString(0), cursor.getLong(1), cursor.getLong(2));
+        }
+        cursor.close();
+        closeDatabase();
+        return userTimeModel != null;
+    }
+
+    public boolean loginUser(String userID, long timeLogin) {
+        Log.d("loguser", "loginUser: " + timeLogin);
+        cursor = null;
+        try {
+            openDatabase();
+            if (checkUserExist(userID)) {
+
+            } else {
+                String sql = "INSERT INTO UserTime VALUES(?,?,?)";
+                SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+                insertStmt.clearBindings();
+                insertStmt.bindString(1, userID);
+                insertStmt.bindLong(2, timeLogin);
+                insertStmt.bindLong(3, 0);
+                insertStmt.execute();
+            }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+    public boolean logoutUser(String userID, long timeLogout) {
+        Log.d("loguser", "logoutUser: " + timeLogout);
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "UPDATE UserTime SET timeLogout=? WHERE userID = ?";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.bindLong(1, timeLogout);
+            insertStmt.bindString(2, userID);
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+
+    public List<UserTimeModel> getListUserTime() {
+        Log.d(TAG, "getListUserTime: ");
+        List<UserTimeModel> listUserTime = new ArrayList<>();
+        UserTimeModel userTimeModel;
+        openDatabase();
+        cursor = mDatabase.rawQuery("SELECT * FROM UserTime", null);
+        while (cursor.moveToNext()) {
+            userTimeModel = new UserTimeModel(cursor.getString(0), cursor.getLong(1), cursor.getLong(2));
+            listUserTime.add(userTimeModel);
+        }
+        cursor.close();
+        closeDatabase();
+        return listUserTime;
+    }
+
+    public boolean deleteAllUserTime() {
+        Log.d(TAG, "deleteAllUserTime: ");
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "delete from UserTime";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
 
 }

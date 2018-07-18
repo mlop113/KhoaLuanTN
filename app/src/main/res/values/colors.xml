@@ -31,4 +31,6 @@
     <color name="transparent">#00000000</color>
     <color name="error_background_press">#a96d6e</color>
     <color name="error_background">#80393b</color>
+
+    <color name="time_ago_text_color">#565656</color>
 </resources>

@@ -47,6 +47,9 @@ public interface APIService {
     @POST("api/user/login/{email}/{password}")
     Call<User> loginUserByEmail(@Path("email") String email, @Path("password") String password);
 
+    @POST("api/user/updatepoint/{userid}/{point}")
+    Call<Response> updatePoint(@Path("userid") String userID, @Path("point") long point);
+
     //Comment
     @GET("api/comment/getlist/{articleid}")
     Call<List<Comment>> getListComment_byArticleID(@Path("articleid") String articleID);

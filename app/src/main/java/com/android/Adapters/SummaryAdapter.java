@@ -23,6 +23,7 @@ import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Models.Article;
 import com.android.Models.Category;
 import com.android.R;
@@ -110,6 +111,8 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 // Blur blur = new Blur(context);
                 // blur.applyBlur(headerViewHolder.imageViewCover, headerViewHolder.textViewDescription);
                 headerViewHolder.textViewDescription.setText(articleHeader.getDescription());
+                headerViewHolder.textViewCategory.setText(getCagoryName(articleHeader.getCategoryID()));
+                headerViewHolder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(articleHeader.getDateCreate()));
                 //  checkLiked(postHeader, headerViewHolder.imageViewLike, headerViewHolder.textViewLike);
 
 
@@ -137,7 +140,8 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
                 itemViewHolder.textViewTitile.setText(article.getTitle());
                 //    checkLiked(post, itemViewHolder.imageViewLike, itemViewHolder.textViewLike);
-
+                itemViewHolder.textViewCategory.setText(getCagoryName(article.getCategoryID()));
+                itemViewHolder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(article.getDateCreate()));
 
                 itemViewHolder.relativeLayoutSummary.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -250,6 +254,15 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 });
                 break;
         }
+    }
+
+    private String getCagoryName(String categoryId) {
+        for (Category category : listCategory) {
+            if (categoryId.equals(category.getCategoryID())) {
+                return category.getName();
+            }
+        }
+        return "";
     }
 
     public void loadMore() {
@@ -424,19 +437,23 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         RelativeLayout relativeLayoutSummary;
         ImageView imageViewCover;
         TextView textViewTitile;
+        TextView textViewTimeAgo;
+        TextView textViewCategory;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
             this.relativeLayoutSummary = (RelativeLayout) itemView.findViewById(R.id.relativeLayoutSummary);
             imageViewCover = (ImageView) itemView.findViewById(R.id.imageViewCover);
             textViewTitile = (TextView) itemView.findViewById(R.id.textViewBarName);
+            textViewTimeAgo= (TextView) itemView.findViewById(R.id.tv_time_ago);
+            textViewCategory= (TextView) itemView.findViewById(R.id.tv_category);
         }
     }
 
     static class HeaderViewHolder extends RecyclerView.ViewHolder {
         LinearLayout linearLayoutSummary;
         ImageView imageViewCover;
-        TextView textViewTitile, textViewDescription;
+        TextView textViewTitile, textViewDescription, textViewTimeAgo, textViewCategory;
 
         public HeaderViewHolder(View itemView) {
             super(itemView);
@@ -444,6 +461,8 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             imageViewCover = (ImageView) itemView.findViewById(R.id.imageViewCover);
             textViewTitile = (TextView) itemView.findViewById(R.id.textViewBarName);
             textViewDescription = (TextView) itemView.findViewById(R.id.textViewDescription);
+            textViewTimeAgo = (TextView) itemView.findViewById(R.id.tv_time_ago);
+            textViewCategory= (TextView) itemView.findViewById(R.id.tv_category);
         }
     }
 

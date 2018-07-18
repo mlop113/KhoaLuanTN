@@ -12,11 +12,14 @@ import android.widget.Toast;
 
 import com.android.API.APIFunction;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Models.User;
 import com.android.R;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Date;
 
 /**
  * Created by Ngoc Vu on 1/2/2018.
@@ -84,6 +87,7 @@ public class Profile_Activity extends AppCompatActivity {
     }
 
     private void logout() {
+        GlobalFunction.logoutUser(this, firebaseUser.getUid(), new Date().getTime());
         firebaseAuth.signOut();
         firebaseUser = null;
         finish();

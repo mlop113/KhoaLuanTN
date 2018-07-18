@@ -7,6 +7,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
+import com.android.DBHelper.DatabaseHelper;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -28,13 +29,12 @@ import java.util.concurrent.TimeUnit;
 
 public class GlobalFunction {
     static DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    public static String calculateTimeAgo(String date)
-    {
 
-        Date today=new Date(System.currentTimeMillis());
-        DateFormat timeFormat= SimpleDateFormat.getDateTimeInstance();
-        Date datepost=new Date();
-        Calendar calendar =Calendar.getInstance();
+    public static String calculateTimeAgo(String date) {
+        Date today = new Date(System.currentTimeMillis());
+        DateFormat timeFormat = SimpleDateFormat.getDateTimeInstance();
+        Date datepost = new Date();
+        Calendar calendar = Calendar.getInstance();
         //Log.d("currentdate",String.valueOf(timeFormat.format(today)));
         try {
             datepost = timeFormat.parse(date);
@@ -42,36 +42,38 @@ public class GlobalFunction {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        long distance = (today.getTime()-datepost.getTime());
+        long distance = (today.getTime() - datepost.getTime());
         long minute = TimeUnit.MINUTES.convert(distance, TimeUnit.MILLISECONDS);
 
-        if(minute>=60)
-        {
+        if (minute >= 60) {
             long hour = TimeUnit.HOURS.convert(distance, TimeUnit.MILLISECONDS);
-            if(hour>=24)
-            {
+            if (hour >= 24) {
                 long day = TimeUnit.DAYS.convert(distance, TimeUnit.MILLISECONDS);
-                if(day>=7)
-                {
-                    if(day>=30)
-                    {
+                if (day >= 7) {
+                    if (day >= 30) {
                         return String.valueOf(day / 30) + " tháng trước";
                     }
                     return String.valueOf(day / 7) + " tuần " + String.valueOf(day % 7) + " ngày trước";
                 }
-                return String.valueOf(day) +" ngày trước";
+                return String.valueOf(day) + " ngày trước";
             }
-            return String.valueOf(hour) +" giờ trước";
+            return String.valueOf(hour) + " giờ trước";
 
-        }
-        else if(minute<=1)
-            return  "vừa xong";
-        return  String.valueOf(minute) +" phút trước";
+        } else if (minute <= 1)
+            return "vừa xong";
+        return String.valueOf(minute) + " phút trước";
+    }
+
+    public static long calculatePoint(long timeLogin, long timeLogout) {
+        Log.d("calculatePoint", "timeLogin: ="+timeLogin);
+        Log.d("calculatePoint", "timeLogout: ="+timeLogout);
+        long distance = timeLogout - timeLogin;
+        return TimeUnit.MINUTES.convert(distance, TimeUnit.MILLISECONDS);
     }
 
 
     public static boolean isNetworkAvailable(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService( context.CONNECTIVITY_SERVICE );
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
@@ -131,14 +133,26 @@ public class GlobalFunction {
             int finalWidth = maxWidth;
             int finalHeight = maxHeight;
             if (ratioMax > ratioBitmap) {
-                finalWidth = (int) ((float)maxHeight * ratioBitmap);
+                finalWidth = (int) ((float) maxHeight * ratioBitmap);
             } else {
-                finalHeight = (int) ((float)maxWidth / ratioBitmap);
+                finalHeight = (int) ((float) maxWidth / ratioBitmap);
             }
             image = Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
             return image;
         } else {
             return image;
         }
+    }
+
+    public static void loginUser(Context context, String userId, long timeLogin) {
+        Log.d("loguser", "loginUser: ");
+        DatabaseHelper databaseHelper = new DatabaseHelper(context);
+        databaseHelper.loginUser(userId, timeLogin);
+    }
+
+    public static void logoutUser(Context context, String userId, long timeLogout) {
+        Log.d("loguser", "logoutUser: ");
+        DatabaseHelper databaseHelper = new DatabaseHelper(context);
+        databaseHelper.logoutUser(userId, timeLogout);
     }
 }

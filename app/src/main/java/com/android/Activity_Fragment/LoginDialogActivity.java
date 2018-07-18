@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.android.API.APIFunction;
 import com.android.API.Response;
 import com.android.Global.AppConfig;
+import com.android.Global.GlobalFunction;
 import com.android.Models.User;
 import com.android.R;
 import com.facebook.AccessToken;
@@ -157,6 +158,7 @@ public class LoginDialogActivity extends AppCompatActivity implements View.OnCli
             if (response.isSuccess()) {
                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                 setResult(AppConfig.RESULT_CODE_LOGIN);
+                GlobalFunction.loginUser(this,firebaseUser.getUid(),new Date().getTime());
                 finish();
             } else {
                 Toast.makeText(this, "Đăng nhập không thành công!", Toast.LENGTH_SHORT).show();
