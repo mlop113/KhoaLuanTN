@@ -29,6 +29,11 @@ import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -93,6 +98,7 @@ public class PushNotificationService extends Service {
         mTimer.scheduleAtFixedRate(new TimeDisplayTimerTask(), 0, NOTIFY_INTERVAL);
         mSocket.connect();
         mSocket.on("SERVER_PUSH_NOTIFICATION", onPushNotification);
+        mSocket.on("SERVER_ON_NETWORK", onNetwork);
         registerUpdateNetworkReciver();
     }
 
@@ -102,6 +108,7 @@ public class PushNotificationService extends Service {
         mTimer.scheduleAtFixedRate(new TimeDisplayTimerTask(), 0, NOTIFY_INTERVAL);
         mSocket.connect();
         mSocket.on("SERVER_PUSH_NOTIFICATION", onPushNotification);
+        mSocket.on("SERVER_ON_NETWORK", onNetwork);
         registerUpdateNetworkReciver();
         return START_REDELIVER_INTENT;
     }
@@ -176,8 +183,42 @@ public class PushNotificationService extends Service {
 
                     Log.d(TAG, "onPushNotification: " + notificationModel.getNotificationID());
 
-                    if (!databaseHelper.checkNotificationExist(notificationModel.getNotificationID())) {
+                    if (!databaseHelper.checkNotificationExist(notificationModel.getNotificationID())
+                            && GlobalFunction.calculateDistance(notificationModel.getDateEnd()) <= 0) {
                         databaseHelper.insertNotification(notificationModel);
+                    }
+                }
+            });
+        }
+    };
+
+    private Emitter.Listener onNetwork = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "onNetwork ");
+                    if (args != null && args.length > 0 && args[0] != null) {
+                        Log.d(TAG, "args[0]: " + args[0]);
+                        try {
+                            JSONObject jsonObject = new JSONObject(args[0].toString());
+                            JSONArray jsonArray = jsonObject.getJSONArray("listData");
+                            for(int i=0;i<jsonArray.length();i++)
+                            {
+                                JSONObject notifiData = jsonArray.getJSONObject(i);
+                                if (!databaseHelper.checkNotificationExist(notifiData.get("NotificationID").toString())
+                                        && GlobalFunction.calculateDistance(notifiData.get("DateEnd").toString()) <= 0) {
+                                    NotificationModel notificationModel = new Gson().fromJson(notifiData.toString(), NotificationModel.class);
+                                    Log.d(TAG, "run: " + notificationModel.getNotificationID());
+                                    databaseHelper.insertNotification(notificationModel);
+                                }
+                            }
+                        } catch (JsonParseException e) {
+                            e.printStackTrace();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
@@ -218,15 +259,7 @@ public class PushNotificationService extends Service {
                     if (intent != null) {
                         boolean isNetworkAvailable = intent.getBooleanExtra(AppConfig.BROADCAST_NETWORK_AVAILABLE, true);
                         if (isNetworkAvailable) {
-                            List<NotificationModel> listNotifi = apiFunction.getListNotification();
-                            if (listNotifi != null && listNotifi.size() > 0) {
-                                Log.d(TAG, "listNotifi: " + listNotifi.size());
-                                for (NotificationModel notifi : listNotifi) {
-                                    if (!databaseHelper.checkNotificationExist(notifi.getNotificationID())) {
-                                        databaseHelper.insertNotification(notifi);
-                                    }
-                                }
-                            }
+                            mSocket.emit("CLIENT_ON_NETWORK");
                         }
                     }
                 }
@@ -251,19 +284,19 @@ public class PushNotificationService extends Service {
         public void run() {
             // run on another thread
             mHandler.post(new Runnable() {
-
                 @Override
                 public void run() {
-                    // display toast
-                   /* Toast.makeText(PushNotificationService.this, getDateTime(),
-                            Toast.LENGTH_SHORT).show();*/
                     try {
                         List<NotificationModel> listNotifi = databaseHelper.getListNotification();
                         if (listNotifi != null && listNotifi.size() > 0) {
                             Log.d(TAG, "listNotifi: " + listNotifi.size());
                             for (NotificationModel notifi : listNotifi) {
                                 Log.d(TAG, "time distance: " + GlobalFunction.calculateDistance(notifi.getDateBegin()));
-                                if (GlobalFunction.calculateDistance(notifi.getDateBegin()) >= 0) {
+                                if (GlobalFunction.calculateDistance(notifi.getDateEnd()) <= 0) {
+                                    databaseHelper.deleteNotication(notifi.getNotificationID());
+                                }
+                                if (GlobalFunction.calculateDistance(notifi.getDateBegin()) >= 0
+                                        && GlobalFunction.calculateDistance(notifi.getDateEnd()) <= 0) {
                                     Log.d(TAG, "run: 1");
                                     displayNotification(notifi.getArticleID(), notifi.getTitle(), notifi.getDescription());
                                     databaseHelper.updateNotication(notifi.getNotificationID());
@@ -283,6 +316,5 @@ public class PushNotificationService extends Service {
             SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd - HH:mm:ss]");
             return sdf.format(new Date());
         }
-
     }
 }
