@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.NetworkOnMainThreadException;
 import android.util.Log;
 
 import com.android.DBHelper.DatabaseHelper;
@@ -31,18 +32,7 @@ public class GlobalFunction {
     static DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
 
     public static String calculateTimeAgo(String date) {
-        Date today = new Date(System.currentTimeMillis());
-        DateFormat timeFormat = SimpleDateFormat.getDateTimeInstance();
-        Date datepost = new Date();
-        Calendar calendar = Calendar.getInstance();
-        //Log.d("currentdate",String.valueOf(timeFormat.format(today)));
-        try {
-            datepost = timeFormat.parse(date);
-            //Log.d("datepost",String.valueOf(timeFormat.format(datepost)));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        long distance = (today.getTime() - datepost.getTime());
+        long distance = calculateDistance(date);
         long minute = TimeUnit.MINUTES.convert(distance, TimeUnit.MILLISECONDS);
 
         if (minute >= 60) {
@@ -71,6 +61,21 @@ public class GlobalFunction {
         return TimeUnit.MINUTES.convert(distance, TimeUnit.MILLISECONDS);
     }
 
+    public static long calculateDistance(String date) {
+        Date today = new Date(System.currentTimeMillis());
+        DateFormat timeFormat = SimpleDateFormat.getDateTimeInstance();
+        Date datepost = new Date();
+        Calendar calendar = Calendar.getInstance();
+        //Log.d("currentdate",String.valueOf(timeFormat.format(today)));
+        try {
+            datepost = timeFormat.parse(date);
+            //Log.d("datepost",String.valueOf(timeFormat.format(datepost)));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return (today.getTime() - datepost.getTime());
+    }
+
 
     public static boolean isNetworkAvailable(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
@@ -78,10 +83,10 @@ public class GlobalFunction {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public static boolean isNetworkAvailable2(Context context) {
-        if (isNetworkAvailable2(context)) {
+    public static boolean isNetworkAvailable2(Context context , String url) {
+        if (isNetworkAvailable(context)) {
             try {
-                HttpURLConnection urlc = (HttpURLConnection) (new URL(GlobalStaticData.URL_HOST).openConnection());
+                HttpURLConnection urlc = (HttpURLConnection) (new URL(url).openConnection());
                 urlc.setRequestProperty("User-Agent", "Test");
                 urlc.setRequestProperty("Connection", "close");
                 urlc.setConnectTimeout(1500);
@@ -89,6 +94,9 @@ public class GlobalFunction {
                 return (urlc.getResponseCode() == 200);
             } catch (IOException e) {
                 Log.e("isNetworkAvailable", "Error checking internet connection", e);
+                return false;
+            } catch (NetworkOnMainThreadException e) {
+                return true;
             }
         } else {
             Log.d("isNetworkAvailable", "No network available!");

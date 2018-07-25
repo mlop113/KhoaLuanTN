@@ -132,15 +132,14 @@ public class PostDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
                 break;
             case ITEMVIEWTYPE_RECYCLERVIEWTAG:
-                RelatedViewHolder tagViewHolder = (RelatedViewHolder) holder;
+                final RelatedViewHolder tagViewHolder = (RelatedViewHolder) holder;
                 tagViewHolder.recyclerViewRelated.setAdapter(related_adapter);
                 tagViewHolder.textViewRelated.setText("Bài viết viên quan");
                 if (related_adapter.getItemCount() <= 0) {
                     tagViewHolder.textViewRelated.setVisibility(View.GONE);
                 }
-                break;
             case ITEMVIEWTYPE_RECYCLERVIEWRELATED:
-                RelatedViewHolder categoryViewHolder = (RelatedViewHolder) holder;
+                final RelatedViewHolder categoryViewHolder = (RelatedViewHolder) holder;
                 categoryViewHolder.textViewRelated.setText("Bài viết cùng chuyên mục");
                 categoryViewHolder.recyclerViewRelated.setAdapter(related_adapterCategory);
                 if (related_adapterCategory.getItemCount() <= 0) {

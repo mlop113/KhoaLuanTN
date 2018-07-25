@@ -3,6 +3,7 @@ package com.android;
 /**
  * Created by Ngoc Vu on 12/18/2017.
  */
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +12,7 @@ import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import com.android.Effect.Typewriter;
+import com.android.Global.AppConfig;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -45,20 +47,48 @@ public class SplashScreenActivity extends AppCompatActivity {
         typewriterAppname.animateText(appname);
 
         // intuser();
-         //initDataInFireBase();
+        //initDataInFireBase();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Handler().postDelayed(new Runnable() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            final String articleID = intent.getStringExtra(AppConfig.POST_ID);
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(SplashScreenActivity.this, MainActivity.class);
+                    intent.putExtra(AppConfig.POST_ID, articleID);
+                    startActivity(intent);
+
+                    finish();
+                }
+            }, SPLASH_TIME_OUT);
+
+        } else {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(SplashScreenActivity.this, MainActivity.class);
+
+                    startActivity(intent);
+
+                    finish();
+                }
+            }, SPLASH_TIME_OUT);
+        }
+        /*new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 Intent intent = new Intent(SplashScreenActivity.this, MainActivity.class);
+
                 startActivity(intent);
+
                 finish();
             }
-        }, SPLASH_TIME_OUT);
+        }, SPLASH_TIME_OUT);*/
     }
 }
 

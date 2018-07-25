@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
@@ -30,11 +31,13 @@ import com.aigestudio.wheelpicker.widgets.WheelYearPicker;
 import com.android.API.APIFunction;
 import com.android.Activity_Fragment.Hot_Fragment;
 import com.android.Activity_Fragment.LoginDialogActivity;
+import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Activity_Fragment.PostsOnRequestActivity;
 import com.android.Activity_Fragment.Profile_Activity;
 import com.android.Adapters.CategoryAdapter;
 import com.android.Adapters.MyFragmentPagerAdapter;
 import com.android.BroadcastReceiver.NetworkChangeReceiver;
+import com.android.DBHelper.DatabaseHelper;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
 import com.android.Global.GlobalFunction;
@@ -43,6 +46,7 @@ import com.android.Interface.IOnClickCategory;
 import com.android.Interface.IOnClickFilter;
 import com.android.Models.Article;
 import com.android.Models.Category;
+import com.android.Service.PushNotificationService;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -74,6 +78,10 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
     CategoryAdapter categoryAdapter;
     ClearableEditText editTextSearch;
     TextView tvHomeStatus;
+    ConstraintLayout ctlNotification;
+    TextView tvOk;
+    TextView tvCancel;
+    boolean isShowCheckBox = false;
 
     //main
     Hot_Fragment hot_fragment = new Hot_Fragment();
@@ -158,6 +166,19 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         NetworkChangeReceiver.register(this);
         registerUpdateNetworkReciver();
 
+        Intent intent = getIntent();
+        if (intent != null) {
+            String articleID = intent.getStringExtra(AppConfig.POST_ID);
+            if (articleID != null) {
+                Article article = apiFunction.getArticleByID(articleID);
+                if (article != null) {
+                    Intent intentP = new Intent(this, PostDetailActivity.class);
+                    intentP.putExtra(AppConfig.POST, article);
+                    startActivity(intentP);
+                }
+            }
+        }
+
     }
 
 
@@ -192,6 +213,46 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
                 return false;
             }
         });
+
+        ctlNotification = findViewById(R.id.ctl_notification);
+        tvOk = findViewById(R.id.tvOk);
+        tvCancel = findViewById(R.id.tvCancel);
+        ctlNotification.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateUICheckBox(!isShowCheckBox);
+            }
+        });
+        tvOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (categoryAdapter != null) {
+                    List<String> listCategorySelected = categoryAdapter.getListCategorySelected();
+                    DatabaseHelper databaseHelper = new DatabaseHelper(MainActivity.this);
+                    databaseHelper.deleteAllCategoryNotification();
+                    for (String categoryID : listCategorySelected) {
+                        databaseHelper.insertCategoryNotification(categoryID);
+                    }
+                }
+                updateUICheckBox(false);
+            }
+        });
+
+        tvCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateUICheckBox(false);
+            }
+        });
+    }
+
+    private void updateUICheckBox(boolean isShow) {
+        this.isShowCheckBox = isShow;
+        tvOk.setVisibility(isShowCheckBox ? View.VISIBLE : View.GONE);
+        tvCancel.setVisibility(isShowCheckBox ? View.VISIBLE : View.GONE);
+        if (categoryAdapter != null) {
+            categoryAdapter.showCheckBox(isShowCheckBox);
+        }
     }
 
     /*private void logout() {
@@ -459,6 +520,7 @@ public class MainActivity extends AppCompatActivity implements IOnClickCategory,
         if (firebaseUser != null) {
             GlobalFunction.loginUser(this, firebaseUser.getUid(), new Date().getTime());
         }
+        PushNotificationService.startService(this);
     }
 
     @Override

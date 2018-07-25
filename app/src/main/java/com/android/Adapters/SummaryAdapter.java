@@ -28,6 +28,7 @@ import com.android.Models.Article;
 import com.android.Models.Category;
 import com.android.R;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,14 +132,15 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 try {
                     if (article.getCoverImageOffLine() != null) {
                         Bitmap bm = BitmapFactory.decodeByteArray(article.getCoverImageOffLine(), 0, article.getCoverImageOffLine().length);
-                        Glide.with(context).load(bm).into(itemViewHolder.imageViewCover);
+                        Glide.with(context).load(bm).apply(new RequestOptions().override(64, 64)).into(itemViewHolder.imageViewCover);
                     } else {
-                        Glide.with(context).load(apiFunction.getUrlImage(article.getCoverImage())).into(itemViewHolder.imageViewCover);
+                        Glide.with(context).load(apiFunction.getUrlImage(article.getCoverImage())).apply(new RequestOptions().override(64, 64)).into(itemViewHolder.imageViewCover);
                     }
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 }
                 itemViewHolder.textViewTitile.setText(article.getTitle());
+                itemViewHolder.textViewDescription.setText(article.getDescription());
                 //    checkLiked(post, itemViewHolder.imageViewLike, itemViewHolder.textViewLike);
                 itemViewHolder.textViewCategory.setText(getCagoryName(article.getCategoryID()));
                 itemViewHolder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(article.getDateCreate()));
@@ -437,6 +439,7 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         RelativeLayout relativeLayoutSummary;
         ImageView imageViewCover;
         TextView textViewTitile;
+        TextView textViewDescription;
         TextView textViewTimeAgo;
         TextView textViewCategory;
 
@@ -444,7 +447,8 @@ public class SummaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             super(itemView);
             this.relativeLayoutSummary = (RelativeLayout) itemView.findViewById(R.id.relativeLayoutSummary);
             imageViewCover = (ImageView) itemView.findViewById(R.id.imageViewCover);
-            textViewTitile = (TextView) itemView.findViewById(R.id.textViewBarName);
+            textViewTitile = (TextView) itemView.findViewById(R.id.textViewTitle);
+            textViewDescription = (TextView) itemView.findViewById(R.id.textViewBarName);
             textViewTimeAgo= (TextView) itemView.findViewById(R.id.tv_time_ago);
             textViewCategory= (TextView) itemView.findViewById(R.id.tv_category);
         }

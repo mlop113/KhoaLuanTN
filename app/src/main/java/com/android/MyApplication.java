@@ -35,8 +35,9 @@ public class MyApplication extends MultiDexApplication {
             if (userTimeModels != null && userTimeModels.size() > 0) {
                 for (UserTimeModel userTimeModel : userTimeModels) {
                     Log.d("loguser", "doInBackground: userid= " + userTimeModel.getUserID());
-                    apiFunction.updatePoint(userTimeModel.getUserID(),
-                            GlobalFunction.calculatePoint(userTimeModel.getTimeLogin(), userTimeModel.getTimeLogout()));
+                    long point = GlobalFunction.calculatePoint(userTimeModel.getTimeLogin(), userTimeModel.getTimeLogout());
+
+                    apiFunction.updatePoint(userTimeModel.getUserID(), point < 0 ? 0 : point);
                 }
                 databaseHelper.deleteAllUserTime();
             }

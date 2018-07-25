@@ -17,6 +17,7 @@ public class AppConfig {
     public static String ACTION="action";
     public static String USER="user";
     public static String POST = "post";
+    public static String POST_ID = "post_id";
     public static String LISTPOST="listpost";
     public static String BARNAME="barname";
     public static String COMMENT="comment";

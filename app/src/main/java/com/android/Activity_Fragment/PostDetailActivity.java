@@ -21,6 +21,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,6 +74,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
     Animation animshake;
     //back
     LinearLayout linearLayoutBack;
+    ProgressBar progressBar;
     //bookmark
     LinearLayout linearLayoutBookmark;
     ImageView imageViewBookmark;
@@ -131,6 +133,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
         databaseReference = FirebaseDatabase.getInstance().getReference();
+        apiFunction = APIFunction.getInstance();
 
         overridePendingTransitionEnter();
         inputMethodManager = (InputMethodManager) getSystemService(this.INPUT_METHOD_SERVICE);
@@ -142,7 +145,6 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         if (intent != null) {
             article = (Article) intent.getSerializableExtra(AppConfig.POST);
             if (article == null) {
-                Toast.makeText(this, "Lỗi", Toast.LENGTH_SHORT).show();
                 finish();
             }
         } else {
@@ -150,7 +152,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
             finish();
         }
 
-        apiFunction = APIFunction.getInstance();
+
         handler = new Handler();
 
         mapping();
@@ -195,6 +197,7 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         swipeRefresh = findViewById(R.id.swipp_refresh);
         //back
         linearLayoutBack = findViewById(R.id.linearLayoutBack);
+        progressBar = findViewById(R.id.progress_bar);
         //bookmark
         linearLayoutBookmark = findViewById(R.id.linearLayoutBookmark);
         imageViewBookmark = findViewById(R.id.imageViewBookmark);
@@ -235,9 +238,17 @@ public class PostDetailActivity extends AppCompatActivity implements View.OnClic
         recyclerViewPostDetail.setLayoutManager(new LinearLayoutManager(PostDetailActivity.this));
         linearLayoutManager = (LinearLayoutManager) recyclerViewPostDetail.getLayoutManager();
         recyclerViewPostDetail.setAdapter(postDetailAdapter);
-
         checkLiked(imageViewLike);
         checkBookmark();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setVisibility(View.GONE);
+                recyclerViewPostDetail.setVisibility(View.VISIBLE);
+            }
+        }, 3000);
+
     }
 
     private void event() {

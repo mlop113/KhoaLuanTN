@@ -34,8 +34,7 @@
                         android:id="@+id/imageViewCover"
                         android:layout_width="match_parent"
                         android:layout_height="200dp"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/bg_splashscreen1" />
+                        android:scaleType="fitXY"/>
                 </RelativeLayout>
 
                 <LinearLayout
@@ -47,7 +46,6 @@
                         android:id="@+id/textViewBarName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Title here "
                         android:textColor="@color/red"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -57,7 +55,6 @@
                         android:layout_height="wrap_content"
                         android:maxLines="4"
                         android:ellipsize="end"
-                        android:text="description\nasdddsadsaasdsa"
                         android:textColor="@color/black"
                         android:textSize="14sp" />
 
@@ -79,7 +76,6 @@
                         android:id="@+id/tv_category"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="tv_category"
                         android:textColor="@color/red"
                         android:textSize="14sp" />
                     <ImageView
@@ -97,7 +93,6 @@
                         android:id="@+id/tv_time_ago"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="tv_time_ago"
                         android:textColor="@color/time_ago_text_color"
                         android:textSize="12sp"
                         app:layout_constraintBottom_toBottomOf="parent"

@@ -6,6 +6,7 @@ import com.android.Models.Category;
 import com.android.Models.Comment;
 import com.android.Models.Comment_UserModel;
 import com.android.Models.FeedbackComment;
+import com.android.Models.NotificationModel;
 import com.android.Models.ReportComment;
 import com.android.Models.ReportFeedbackComment;
 import com.android.Models.Tag;
@@ -25,6 +26,9 @@ public interface APIService {
     Call<List<Category>> getListCategory();
 
     //Article
+    @GET("api/news/{articleid}")
+    Call<Article> getArticleByID(@Path("articleid") String articleID);
+
     @GET("api/news/getlist")
     Call<List<Article>> getListArticle();
 
@@ -126,4 +130,8 @@ public interface APIService {
     //User
     @POST("api/user/login")
     Call<Response> loginUser(@Body User user);
+
+    //Push Notification
+    @GET("api/getlistnotification")
+    Call<List<NotificationModel>> getListNotification();
 }

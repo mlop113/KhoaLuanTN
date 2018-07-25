@@ -5,11 +5,16 @@
     android:orientation="horizontal"
     android:layout_marginLeft="5dp"
     android:layout_marginStart="5dp">
+    <CheckBox
+        android:id="@+id/cbCategory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
     <ImageView
         android:id="@+id/imageViewCategory"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:layout_gravity="center"
+        android:layout_gravity="center_vertical"
         android:src="@drawable/ic_expand_right"
         android:layout_margin="5dp"/>
     <TextView

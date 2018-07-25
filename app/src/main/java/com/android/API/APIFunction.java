@@ -9,6 +9,7 @@ import com.android.Models.Category;
 import com.android.Models.Comment;
 import com.android.Models.Comment_UserModel;
 import com.android.Models.FeedbackComment;
+import com.android.Models.NotificationModel;
 import com.android.Models.ReportComment;
 import com.android.Models.ReportFeedbackComment;
 import com.android.Models.Tag;
@@ -56,6 +57,18 @@ public class APIFunction {
 
 
     //Article
+    public Article getArticleByID(String articleID) {
+        Article article = null;
+        APIService apiService = ServiceGenerator.createService(APIService.class);
+        final Call<Article> call = apiService.getArticleByID(articleID);
+        try {
+            article = call.execute().body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return article;
+    }
+
     public List<Article> getListArticle() {
         List<Article> listArticle = new ArrayList<>();
         APIService apiService = ServiceGenerator.createService(APIService.class);
@@ -395,7 +408,7 @@ public class APIFunction {
     }
 
     public Response updatePoint(String userID, long point) {
-        Log.d("loguser", "updatePoint: "+point);
+        Log.d("loguser", "updatePoint: " + point);
         Response response = null;
         Call<Response> call = apiService.updatePoint(userID, point);
         try {
@@ -404,5 +417,18 @@ public class APIFunction {
             e.printStackTrace();
         }
         return response;
+    }
+
+    /*Notification*/
+    public List<NotificationModel> getListNotification() {
+        List<NotificationModel> list = new ArrayList<>();
+        APIService apiService = ServiceGenerator.createService(APIService.class);
+        final Call<List<NotificationModel>> call = apiService.getListNotification();
+        try {
+            list = call.execute().body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

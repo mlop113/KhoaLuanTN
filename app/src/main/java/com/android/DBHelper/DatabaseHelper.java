@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
 import com.android.Models.Article;
+import com.android.Models.NotificationModel;
 import com.android.Models.UserTimeModel;
 
 import java.io.File;
@@ -253,4 +254,155 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public List<NotificationModel> getListNotification() {
+        Log.d(TAG, "getListNotification: ");
+        List<NotificationModel> listNotifi = new ArrayList<>();
+        NotificationModel notifi = null;
+        openDatabase();
+        cursor = mDatabase.rawQuery("SELECT * FROM Notification WHERE push = 0 AND categoryID in (SELECT * FROM CategoryNotification)", null);
+        while (cursor.moveToNext()) {
+            notifi = new NotificationModel(cursor.getString(0), cursor.getString(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4),
+                    cursor.getString(5),cursor.getString(6), cursor.getInt(7));
+            listNotifi.add(notifi);
+        }
+        cursor.close();
+        closeDatabase();
+        return listNotifi;
+    }
+
+    public boolean insertNotification(NotificationModel newNotifi) {
+        Log.d(TAG, "insertNotification: " + newNotifi.getNotificationID());
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "INSERT INTO Notification VALUES(?,?,?,?,?,?,?,?)";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.bindString(1, newNotifi.getNotificationID());
+            insertStmt.bindString(2, newNotifi.getArticleID());
+            insertStmt.bindString(3, newNotifi.getTitle());
+            insertStmt.bindString(4, newNotifi.getDescription());
+            insertStmt.bindString(5, newNotifi.getCategoryID());
+            insertStmt.bindString(6, newNotifi.getDateBegin());
+            insertStmt.bindString(7, newNotifi.getDateEnd());
+            insertStmt.bindLong(8, newNotifi.getIsPush());
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+    public boolean updateNotication(String notificationID) {
+        Log.d(TAG, "updateNotication: " + notificationID);
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "Update Notification set push = 1 where notificationID = ?";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.bindString(1, notificationID);
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+    public boolean deleteNotication(String notificationID) {
+        Log.d(TAG, "deleteNotication: " + notificationID);
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "delete from Notification where notificationID=?";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.bindString(1, notificationID);
+            insertStmt.clearBindings();
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+    public boolean checkNotificationExist(String notificationID) {
+        Log.d(TAG, "checkNotificationExist: " + notificationID);
+        NotificationModel notificationModel = null;
+        openDatabase();
+        cursor = mDatabase.rawQuery("SELECT * FROM Notification WHERE notificationID = '" + notificationID + "'", null);
+        while (cursor.moveToNext()) {
+            notificationModel = new NotificationModel(cursor.getString(0), cursor.getString(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4),
+                    cursor.getString(5),cursor.getString(6), cursor.getInt(7));
+        }
+        cursor.close();
+        closeDatabase();
+        return notificationModel != null;
+    }
+
+    public List<String> getListCategoryNotification() {
+        Log.d(TAG, "getListCategoryNotification: ");
+        List<String> listCateNotifi = new ArrayList<>();
+        openDatabase();
+        cursor = mDatabase.rawQuery("SELECT * FROM CategoryNotification", null);
+        while (cursor.moveToNext()) {
+            listCateNotifi.add(cursor.getString(0));
+        }
+        cursor.close();
+        closeDatabase();
+        return listCateNotifi;
+    }
+
+    public boolean insertCategoryNotification(String categoryID) {
+        Log.d(TAG, "insertCategoryNotification: " + categoryID);
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "INSERT INTO CategoryNotification VALUES(?)";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.bindString(1, categoryID);
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
+
+
+    public boolean deleteAllCategoryNotification() {
+        Log.d(TAG, "deleteCategoryNotification: ");
+        cursor = null;
+        try {
+            openDatabase();
+            String sql = "delete from CategoryNotification";
+            SQLiteStatement insertStmt = getWritableDatabase().compileStatement(sql);
+            insertStmt.clearBindings();
+            insertStmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            closeDatabase();
+        }
+    }
 }

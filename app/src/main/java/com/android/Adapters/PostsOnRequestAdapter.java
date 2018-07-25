@@ -6,8 +6,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -16,7 +14,9 @@ import com.android.API.APIFunction;
 import com.android.Activity_Fragment.PostDetailActivity;
 import com.android.Global.AppConfig;
 import com.android.Global.AppPreferences;
+import com.android.Global.GlobalFunction;
 import com.android.Models.Article;
+import com.android.Models.Category;
 import com.android.R;
 import com.bumptech.glide.Glide;
 
@@ -29,19 +29,17 @@ import java.util.List;
 
 public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     Context context;
-    Animation animation0to180,animation180to0;
     List<Article> listArticle = new ArrayList<>();
-    Animation hyperspaceJumpAnimation;
     AppPreferences appPreferences;
     APIFunction apiFunction;
+    List<Category> listCategory = new ArrayList<>();
     public PostsOnRequestAdapter(Context context, List<Article> listArticle) {
         this.context = context;
         this.listArticle = listArticle;
-        animation0to180 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_0to180);
-        animation180to0 = AnimationUtils.loadAnimation(context, R.anim.rotate_iconexpand_180to0);
-        hyperspaceJumpAnimation = AnimationUtils.loadAnimation(context, R.anim.animlike);
         appPreferences = AppPreferences.getInstance(context);
         apiFunction = new APIFunction();
+        listCategory = apiFunction.getListCategory();
+
     }
 
     @Override
@@ -63,7 +61,9 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             e.printStackTrace();
         }
         itemViewHolder.textViewTitile.setText(article.getTitle());
-
+        itemViewHolder.textViewDescription.setText(article.getDescription());
+        itemViewHolder.textViewCategory.setText(getCagoryName(article.getCategoryID()));
+        itemViewHolder.textViewTimeAgo.setText(GlobalFunction.calculateTimeAgo(article.getDateCreate()));
 
         itemViewHolder.relativeLayoutSummary.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,8 +73,15 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                 context.startActivity(intent);
             }
         });
+    }
 
-
+    private String getCagoryName(String categoryId) {
+        for (Category category : listCategory) {
+            if (categoryId.equals(category.getCategoryID())) {
+                return category.getName();
+            }
+        }
+        return "";
     }
 
     @Override
@@ -100,6 +107,9 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         RelativeLayout relativeLayoutSummary;
         ImageView imageViewCover;
         TextView textViewTitile;
+        TextView textViewDescription;
+        TextView textViewCategory;
+        TextView textViewTimeAgo;
 
 
         public ItemViewHolder( View v) {
@@ -107,7 +117,10 @@ public class PostsOnRequestAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             this.v = v;
             this.relativeLayoutSummary = (RelativeLayout) v.findViewById(R.id.relativeLayoutSummary);
             imageViewCover = (ImageView) itemView.findViewById(R.id.imageViewCover);
-            textViewTitile = (TextView) itemView.findViewById(R.id.textViewBarName);
+            textViewTitile = (TextView) itemView.findViewById(R.id.textViewTitle);
+            textViewDescription = (TextView) itemView.findViewById(R.id.textViewBarName);
+            textViewCategory = (TextView) itemView.findViewById(R.id.tv_category);
+            textViewTimeAgo = (TextView) itemView.findViewById(R.id.tv_time_ago);
 
 
         }

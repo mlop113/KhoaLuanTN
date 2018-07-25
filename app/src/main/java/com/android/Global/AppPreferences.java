@@ -49,4 +49,12 @@ public class AppPreferences {
     public void setUserId(String userId){
         preferences.edit().putString("userId",userId).apply();
     }
+
+    public String getIPAddress(){
+        return  preferences.getString("IPAddress","http://127.0.0.1:3000/");
+    }
+
+    public void setIPAddress(String ipAddress){
+        preferences.edit().putString("IPAddress",ipAddress).apply();
+    }
 }
